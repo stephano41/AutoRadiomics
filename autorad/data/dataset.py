@@ -91,6 +91,7 @@ class FeatureDataset:
         target: str,
         ID_colname: str,
         features: Optional[list[str]] = None,
+        additional_features=[],
         meta_columns: list[str] = [],
         random_state: int = config.SEED,
     ):
@@ -107,7 +108,7 @@ class FeatureDataset:
         self.target = target
         self.ID_colname = ID_colname
         self.random_state = random_state
-        self.features = self._init_features(features)
+        self.features = self._init_features(features) + additional_features
         self.X: pd.DataFrame = self.df[self.features]
         self.y: pd.Series = self.df[self.target]
         self.meta_df = self.df[meta_columns + [ID_colname]]
@@ -228,6 +229,8 @@ class FeatureDataset:
             splits = self.split_train_val_test(
                 split_on, test_size, *args, **kwargs
             )
+        elif method == "train_with_cross_validation":
+            splits = self.full_split_no_test(split_on, test_size, *args, **kwargs)
         else:
             raise ValueError(f"Method {method} is not supported.")
 
@@ -362,6 +365,29 @@ class FeatureDataset:
         self.load_splits(ids_split)
 
         return self
+        
+    def full_split_no_test(self, split_on, test_size, n_splits: int = 5) -> dict:
+        patient_df = self.df[[split_on, self.target]].drop_duplicates()
+        if not patient_df[split_on].is_unique:
+            raise ValueError(
+                f"Selected column {split_on} has varying labels for the same ID!"
+            )
+        ids = patient_df[split_on].tolist()
+        labels = patient_df[self.target].tolist()
+        splits = splitting.split_cross_validation(
+            ids_train=ids,
+            y_train=labels,
+            n_splits=n_splits,
+            cv_type="stratified_kfold"
+        )
+        results={
+            "split_on": split_on,
+            "split_type": f"{n_splits} fold stratified_kfold cross validation on training set only",
+            "test": [], # add something to test to stop code from breaking, not intended to be used
+            "train": splits
+        }
+
+        return results
 
 
 class ImageDataset:
