@@ -462,7 +462,7 @@ class ImageDataset:
     def ids(self) -> list[str]:
         return self.df[self.ID_colname].to_list()
 
-    def plot_examples(self, n: int = 1, window="soft tissues"):
+    def plot_examples(self, n: int = 1, window="soft tissues", label=1):
         if n > len(self.image_paths):
             n = len(self.image_paths)
             log.info(
@@ -478,6 +478,7 @@ class ImageDataset:
                 case[self.image_colname],
                 case[self.mask_colname],
                 window=window,
+                label=label
             )
             image_2D, mask_2D = vols.get_slices()
             single_plot = plot_volumes.overlay_mask_contour(image_2D, mask_2D)
@@ -490,4 +491,6 @@ class ImageDataset:
             ax.axis("off")
             # return fig
             ax.axis("off")
+        # return fig
+
         # return fig
