@@ -59,8 +59,8 @@ SEED = 123
 PYRADIOMICS_TMP_DIR = tempfile.mkdtemp()
 IS_DEMO = False
 
-ENABLE_AUTORAD_LOGGING = os.getenv("ENABLE_AUTORAD_LOGGING", True)
-if ENABLE_AUTORAD_LOGGING:
+ENABLE_AUTORAD_LOGGING = os.getenv("ENABLE_AUTORAD_LOGGING", '1')
+if int(ENABLE_AUTORAD_LOGGING):
     # Logging
     LOGS_DIR = Path(RESULT_DIR, "logs")
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
