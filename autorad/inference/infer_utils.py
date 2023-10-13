@@ -63,8 +63,7 @@ def load_dataset_artifacts(run):
 def load_feature_dataset(feature_df, dataset_config, splits) -> FeatureDataset:
     dataset = FeatureDataset(
         dataframe=feature_df,
-        target=dataset_config["target"],
-        ID_colname=dataset_config["ID_colname"],
+        **dataset_config
     )
     dataset.load_splits(splits)
 
