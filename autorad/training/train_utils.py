@@ -35,6 +35,7 @@ def log_dataset(dataset: FeatureDataset):
     dataset_config = {
         "target": dataset.target,
         "ID_colname": dataset.ID_colname,
+        "additional_features": dataset.additional_features
     }
     with tempfile.TemporaryDirectory() as tmp_dir:
         save_dir = Path(tmp_dir) / "feature_dataset"
