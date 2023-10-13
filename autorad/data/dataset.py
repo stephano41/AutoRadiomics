@@ -107,6 +107,7 @@ class FeatureDataset:
         self.df = dataframe
         self.target = target
         self.ID_colname = ID_colname
+        self.additional_features = additional_features
         self.random_state = random_state
         self.features = self._init_features(features) + additional_features
         self.X: pd.DataFrame = self.df[self.features]
