@@ -75,7 +75,7 @@ def plot_shap_waterfall(explainer, X_preprocessed, max_display=10):
         X_preprocessed, max_evals=2 * len(X_preprocessed.columns) + 1
     )
     shap_fig = shap.plots.waterfall(
-        shap_values[0], max_display=max_display, show=True
+        shap_values[0], max_display=max_display, show=False
     )
     return shap_fig
 
