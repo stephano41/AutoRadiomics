@@ -8,7 +8,6 @@ import shap
 from autorad.data import FeatureDataset
 from autorad.models import MLClassifier
 from autorad.utils import io, mlflow_utils
-from autorad.inference.infer_utils import plot_shap_waterfall
 
 
 def get_model_by_name(name, models):
@@ -25,8 +24,6 @@ def log_splits(splits: dict):
 def log_shap(model: MLClassifier, X_train: pd.DataFrame):
     explainer = shap.Explainer(model.predict_proba_binary, X_train)
     mlflow.shap.log_explainer(explainer, "shap-explainer")
-
-    mlflow.log_figure(plot_shap_waterfall(X_train,  max_evals=2 * len(X_train.columns) + 1), "feature_importance.png", save_kwargs={"dpi":300})
 
 
 def log_mlflow_params(params):

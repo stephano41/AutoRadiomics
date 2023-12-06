@@ -5,7 +5,7 @@ pandas>=1.4.3
 scipy==1.9
 pyyaml==6.0
 statsmodels==0.13.2
-mlflow>=2.0.1
+mlflow==2.0.1
 nibabel==3.2.1
 matplotlib==3.5
 xnat==0.4.2
