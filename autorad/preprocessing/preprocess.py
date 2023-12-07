@@ -136,7 +136,7 @@ class Preprocessor:
         if not X.test.empty:
             result_X["test"] = self.pipeline.transform(X.test)
             result_y["test"] = y.test
-       else:
+        else:
             result_X["test"] = None
             result_y["test"] = None
            
