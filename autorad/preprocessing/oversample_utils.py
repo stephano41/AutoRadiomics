@@ -27,7 +27,7 @@ class OversamplerWrapper:
     def fit(self, X, y):
         return self.oversampler.fit(X, y)
 
-    def fit_transform(self, X, y):
+    def fit_resample(self, X, y):
         return self.oversampler.fit_resample(X, y)
 
     def transform(self, X):

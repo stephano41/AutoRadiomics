@@ -266,10 +266,10 @@ class Preprocessor:
             steps.append(
                 (
                     "oversample",
-                    oversample_utils.create_oversampling_model(
+                    oversample_utils.OversamplerWrapper(oversample_utils.create_oversampling_model(
                         method=self.oversampling_method,
                         random_state=self.random_state,
-                    )
+                    ))
                 ),
             )
         pipeline = Pipeline(steps)
