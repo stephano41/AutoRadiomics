@@ -4,7 +4,7 @@ import dataclasses
 import logging
 from pathlib import Path
 from typing import Any
-
+import inspect
 import joblib
 import pandas as pd
 from imblearn.pipeline import Pipeline
@@ -125,7 +125,6 @@ class Preprocessor:
 
         result_X = {}
         result_y = {}
-        transformed = self.pipeline.fit_transform(X.train, y.train)
         if self.oversampling_method is not None:
             result_X["train"], result_y["train"] = self.pipeline.fit_resample(X.train, y.train)
         else:
@@ -271,7 +270,7 @@ class Preprocessor:
                         method=self.oversampling_method,
                         random_state=self.random_state,
                     )
-                )
+                ),
             )
         pipeline = Pipeline(steps)
         return pipeline
