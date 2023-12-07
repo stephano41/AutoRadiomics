@@ -7,7 +7,7 @@ from typing import Any
 
 import joblib
 import pandas as pd
-from sklearn.pipeline import Pipeline
+from imblearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from autorad.config import config
@@ -126,13 +126,20 @@ class Preprocessor:
         result_X = {}
         result_y = {}
         transformed = self.pipeline.fit_transform(X.train, y.train)
-        if isinstance(transformed, tuple):
-            result_X["train"], result_y["train"] = transformed
+        if self.oversampling_method is not None:
+            result_X["train"], result_y["train"] = self.pipeline.fit_resample(X.train, y.train)
         else:
-            result_X["train"] = transformed
+            result_X["train"] = self.pipeline.fit_transform(X.train, y.train)
             result_y["train"] = y.train
-        result_X["test"] = self.pipeline.transform(X.test)
-        result_y["test"] = y.test
+        
+        # allow for empty test set
+        if not X.test.empty:
+            result_X["test"] = self.pipeline.transform(X.test)
+            result_y["test"] = y.test
+       else:
+            result_X["test"] = None
+            result_y["test"] = None
+           
         if X.val is not None:
             result_X["val"] = self.pipeline.transform(X.val)
             result_y["val"] = y.val
@@ -174,12 +181,11 @@ class Preprocessor:
             X.val_folds,
         ):
             cv_pipeline = self._build_pipeline()
-            transformed = cv_pipeline.fit_transform(X_train, y_train)
 
-            if isinstance(transformed, tuple):
-                result_df_X_train, result_y_train = transformed
+            if self.oversampling_method is not None:
+                result_df_X_train, result_y_train = cv_pipeline.fit_resample(X_train, y_train)
             else:
-                result_df_X_train = transformed
+                result_df_X_train = cv_pipeline.fit_transform(X_train, y_train)
                 result_y_train = y_train
 
             result_df_X_val = cv_pipeline.transform(X_val)
@@ -201,7 +207,11 @@ class Preprocessor:
     def transform(self, X: TrainingInput):
         result_X = {}
         result_X["train"] = self.pipeline.transform(X.train)
-        result_X["test"] = self.pipeline.transform(X.test)
+        # allow for empty test set
+        if not X.test.empty:
+            result_X["test"] = self.pipeline.transform(X.test)
+        else:
+            result_X["test"] = None
         if X.val is not None:
             result_X["val"] = self.pipeline.transform(X.val)
         if X.train_folds is not None and X.val_folds is not None:
@@ -267,3 +277,7 @@ class Preprocessor:
             )
         pipeline = Pipeline(steps)
         return pipeline
+    
+    def get_params(self, deep=None):
+        return {key: getattr(self, key) for key in inspect.signature(Preprocessor.__init__).parameters.keys() if
+                key != "self"}
