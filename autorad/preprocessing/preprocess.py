@@ -276,5 +276,5 @@ class Preprocessor:
         return pipeline
     
     def get_params(self, deep=None):
-        return {key: getattr(self, key) for key in inspect.signature(Preprocessor.__init__).parameters.keys() if
+        return {key: getattr(self, key) for key in inspect.signature(self.__init__).parameters.keys() if
                 key != "self"}
