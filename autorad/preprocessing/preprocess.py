@@ -133,14 +133,14 @@ class Preprocessor:
         
         # allow for empty test set
         if not X.test.empty:
-            result_X["test"] = self.pipeline.transform(X.test)
+            result_X["test"] = self.transform(X.test)
             result_y["test"] = y.test
         else:
             result_X["test"] = None
             result_y["test"] = None
            
         if X.val is not None:
-            result_X["val"] = self.pipeline.transform(X.val)
+            result_X["val"] = self.transform(X.val)
             result_y["val"] = y.val
         if X.train_folds is not None and X.val_folds is not None:
             (
@@ -152,6 +152,16 @@ class Preprocessor:
         X_preprocessed = TrainingInput(**result_X)
         y_preprocessed = TrainingLabels(**result_y)
         return X_preprocessed, y_preprocessed
+    
+    def transform(self, X):
+        if self.oversampling_method is not None and hasattr(self.pipeline.steps[-1][1], "fit_resample"):
+            Xt=X
+            for _,_, transform in self.pipeline._iter(with_final=False):
+                Xt=transform.transform(Xt)
+            return Xt
+        
+        return self.pipeline.transform(X)
+
 
     def _fit_transform_cv_folds(
         self, X: TrainingInput, y: TrainingLabels
@@ -179,15 +189,16 @@ class Preprocessor:
             y.train_folds,
             X.val_folds,
         ):
-            cv_pipeline = self._build_pipeline()
+            # reinstantiate pipeline
+            self.pipeline = self._build_pipeline()
 
             if self.oversampling_method is not None:
-                result_df_X_train, result_y_train = cv_pipeline.fit_resample(X_train, y_train)
+                result_df_X_train, result_y_train = self.pipeline.fit_resample(X_train, y_train)
             else:
-                result_df_X_train = cv_pipeline.fit_transform(X_train, y_train)
+                result_df_X_train = self.pipeline.fit_transform(X_train, y_train)
                 result_y_train = y_train
 
-            result_df_X_val = cv_pipeline.transform(X_val)
+            result_df_X_val = self.transform(X_val)
 
             result_X_train_folds.append(result_df_X_train)
             result_y_train_folds.append(result_y_train)
@@ -201,18 +212,18 @@ class Preprocessor:
         )
 
     def transform_df(self, X: pd.DataFrame) -> pd.DataFrame:
-        return self.pipeline.transform(X)
+        return self.transform(X)
 
     def transform(self, X: TrainingInput):
         result_X = {}
-        result_X["train"] = self.pipeline.transform(X.train)
+        result_X["train"] = self.transform(X.train)
         # allow for empty test set
         if not X.test.empty:
-            result_X["test"] = self.pipeline.transform(X.test)
+            result_X["test"] = self.transform(X.test)
         else:
             result_X["test"] = None
         if X.val is not None:
-            result_X["val"] = self.pipeline.transform(X.val)
+            result_X["val"] = self.transform(X.val)
         if X.train_folds is not None and X.val_folds is not None:
             (
                 result_X["train_folds"],
@@ -234,8 +245,8 @@ class Preprocessor:
             X.train_folds,
             X.val_folds,
         ):
-            result_df_X_train = self.pipeline.transform(X_train)
-            result_df_X_val = self.pipeline.transform(X_val)
+            result_df_X_train = self.transform(X_train)
+            result_df_X_val = self.transform(X_val)
             result_X_train_folds.append(result_df_X_train)
             result_X_val_folds.append(result_df_X_val)
         return (
@@ -266,10 +277,10 @@ class Preprocessor:
             steps.append(
                 (
                     "oversample",
-                    oversample_utils.OversamplerWrapper(oversample_utils.create_oversampling_model(
+                    oversample_utils.create_oversampling_model(
                         method=self.oversampling_method,
                         random_state=self.random_state,
-                    ))
+                    )
                 ),
             )
         pipeline = Pipeline(steps)
