@@ -28,6 +28,15 @@ class TrainingInput:
         assert (self.val is not None and self.train_folds is None) or (
             self.val is None and self.train_folds is not None
         ), "Exactly one of val, train_folds should be not None"
+        self.train.reset_index(inplace=True, drop=True)
+        if isinstance(self.test, pd.DataFrame):
+            self.test.reset_index(inplace=True, drop=True)
+        if isinstance(self.val, pd.DataFrame):
+            self.val.reset_index(inplace=True, drop=True)
+        if self.train_folds:
+            self.train_folds = [fold.reset_index(drop=True) for fold in self.train_folds if fold is not None]
+        if self.val_folds:
+            self.val_folds = [fold.reset_index(drop=True) for fold in self.val_folds if fold is not None]
 
 
 @dataclass
@@ -42,6 +51,15 @@ class TrainingLabels:
         assert (self.val is not None and self.train_folds is None) or (
             self.val is None and self.train_folds is not None
         ), "Exactly one of val, train_folds should be not None"
+        self.train.reset_index(inplace=True, drop=True)
+        if isinstance(self.test, pd.DataFrame):
+            self.test.reset_index(inplace=True, drop=True)
+        if isinstance(self.val, pd.DataFrame):
+            self.val.reset_index(inplace=True, drop=True)
+        if self.train_folds:
+            self.train_folds = [fold.reset_index(drop=True) for fold in self.train_folds if fold is not None]
+        if self.val_folds:
+            self.val_folds = [fold.reset_index(drop=True) for fold in self.val_folds if fold is not None]
 
 
 @dataclass
@@ -51,6 +69,17 @@ class TrainingMeta:
     val: Optional[pd.DataFrame] = None
     train_folds: Optional[list[pd.DataFrame]] = None
     val_folds: Optional[list[pd.DataFrame]] = None
+
+    def __post_init__(self):
+        self.train.reset_index(inplace=True, drop=True)
+        if isinstance(self.test, pd.DataFrame):
+            self.test.reset_index(inplace=True, drop=True)
+        if isinstance(self.val, pd.DataFrame):
+            self.val.reset_index(inplace=True, drop=True)
+        if self.train_folds:
+            self.train_folds = [fold.reset_index(drop=True) for fold in self.train_folds if fold is not None]
+        if self.val_folds:
+            self.val_folds = [fold.reset_index(drop=True) for fold in self.val_folds if fold is not None]
 
 
 @dataclass
