@@ -133,14 +133,14 @@ class Preprocessor:
         
         # allow for empty test set
         if not X.test.empty:
-            result_X["test"] = self.transform(X.test)
+            result_X["test"] = self._transform(X.test)
             result_y["test"] = y.test
         else:
             result_X["test"] = None
             result_y["test"] = None
            
         if X.val is not None:
-            result_X["val"] = self.transform(X.val)
+            result_X["val"] = self._transform(X.val)
             result_y["val"] = y.val
         if X.train_folds is not None and X.val_folds is not None:
             (
@@ -153,7 +153,7 @@ class Preprocessor:
         y_preprocessed = TrainingLabels(**result_y)
         return X_preprocessed, y_preprocessed
     
-    def transform(self, X):
+    def _transform(self, X):
         if self.oversampling_method is not None and hasattr(self.pipeline.steps[-1][1], "fit_resample"):
             Xt=X
             for _,_, transform in self.pipeline._iter(with_final=False):
@@ -198,7 +198,7 @@ class Preprocessor:
                 result_df_X_train = self.pipeline.fit_transform(X_train, y_train)
                 result_y_train = y_train
 
-            result_df_X_val = self.transform(X_val)
+            result_df_X_val = self._transform(X_val)
 
             result_X_train_folds.append(result_df_X_train)
             result_y_train_folds.append(result_y_train)
@@ -212,18 +212,18 @@ class Preprocessor:
         )
 
     def transform_df(self, X: pd.DataFrame) -> pd.DataFrame:
-        return self.transform(X)
+        return self._transform(X)
 
     def transform(self, X: TrainingInput):
         result_X = {}
-        result_X["train"] = self.transform(X.train)
+        result_X["train"] = self._transform(X.train)
         # allow for empty test set
         if not X.test.empty:
-            result_X["test"] = self.transform(X.test)
+            result_X["test"] = self._transform(X.test)
         else:
             result_X["test"] = None
         if X.val is not None:
-            result_X["val"] = self.transform(X.val)
+            result_X["val"] = self._transform(X.val)
         if X.train_folds is not None and X.val_folds is not None:
             (
                 result_X["train_folds"],
@@ -245,8 +245,8 @@ class Preprocessor:
             X.train_folds,
             X.val_folds,
         ):
-            result_df_X_train = self.transform(X_train)
-            result_df_X_val = self.transform(X_val)
+            result_df_X_train = self._transform(X_train)
+            result_df_X_val = self._transform(X_val)
             result_X_train_folds.append(result_df_X_train)
             result_X_val_folds.append(result_df_X_val)
         return (
