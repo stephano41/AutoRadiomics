@@ -261,6 +261,8 @@ class FeatureDataset:
             )
         elif method == "train_with_cross_validation":
             splits = self.full_split_no_test(split_on, test_size, *args, **kwargs)
+        elif method == "repeated_stratified_kfold_no_test":
+            splits = self.repeated_stratified_kfold_no_test(split_on, test_size, *args, **kwargs)
         else:
             raise ValueError(f"Method {method} is not supported.")
 
@@ -419,6 +421,30 @@ class FeatureDataset:
 
         return results
 
+    def repeated_stratified_kfold_no_test(self, split_on, test_size, n_splits=5, n_repeats=10):
+        patient_df = self.df[[split_on, self.target]].drop_duplicates()
+        if not patient_df[split_on].is_unique:
+            raise ValueError(
+                f"Selected column {split_on} has varying labels for the same ID!"
+            )
+        ids = patient_df[split_on].tolist()
+        labels = patient_df[self.target].tolist()
+        splits = splitting.split_cross_validation(
+            ids_train=ids,
+            y_train=labels,
+            n_splits=n_splits,
+            cv_type="repeated_stratified_kfold",
+            n_repeats=n_repeats
+        )
+
+        results = {
+            "split_on": split_on,
+            "split_type": f"{n_repeats} repeated stratified {n_splits} fold cross validation on training set only",
+            "test": [],  # add something to test to stop code from breaking, not intended to be used
+            "train": splits
+        }
+
+        return results
 
 class ImageDataset:
     """

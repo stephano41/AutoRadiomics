@@ -17,6 +17,7 @@ def split_cross_validation(
     n_splits: int = 5,
     random_state: Optional[int] = None,
     cv_type: str = "stratified_kfold",
+    **kwargs
 ) -> dict[str, dict[str, Any]]:
     """Split the training set into K folds for cross-validation.
 
@@ -41,7 +42,7 @@ def split_cross_validation(
         )
     elif cv_type == "repeated_stratified_kfold":
         kf = RepeatedStratifiedKFold(
-            n_splits=n_splits, n_repeats=10, random_state=random_state
+            n_splits=n_splits, random_state=random_state, **kwargs
         )
     elif cv_type == "leave_one_out":
         kf = LeaveOneOut()
