@@ -15,7 +15,7 @@ def create_oversampling_model(method: str, random_state: int = config.SEED):
     elif method == "SMOTE":
         return SMOTE(random_state=random_state)
     elif method == "BorderlineSMOTE":
-        return BorderlineSMOTE(random_state=random_state, kind="borderline1")
+        return BorderlineSMOTE(random_state=random_state, kind="borderline-1")
     raise ValueError(f"Unknown oversampling method: {method}")
 
 
