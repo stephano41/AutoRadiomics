@@ -12,12 +12,44 @@ def get_param_fn(model_name) -> Callable:
         param_fn = params_LogReg
     elif model_name == "SVM":
         param_fn = params_SVM
+    elif model_name == 'KNN':
+        param_fn = params_KNN
+    elif model_name == "MLP":
+        param_fn = params_MLP
+    elif model_name == "DecisionTreeClassifier":
+        param_fn = params_DecisionTreeClassifier
     else:
         raise ValueError(
             f"Optuna parameters for {model_name} not implemented!"
         )
     return param_fn
 
+
+def params_DecisionTreeClassifier(trial: Trial) -> dict:
+    params = {
+        'criterion': trial.suggest_categorical('decisiontree_criterion', ['gini', 'entropy', 'log_loss']),
+        'splitter': trial.suggest_categorical('decisiontree_splitter', ['best', 'random']),
+    }
+    return params
+
+
+def params_MLP(trial: Trial) -> dict:
+    num_hidden_layers = trial.suggest_int('mlp_num_hidden_layers')
+    hidden_layer_sizes=[]
+    for layer in range(num_hidden_layers):
+        hidden_layer_sizes.append(trial.suggest_int(f'mlp_hidden_layer_{layer}', 1,200))
+    params ={
+        'hidden_layer_sizes': hidden_layer_sizes
+    }
+    return params
+
+def params_KNN(trial: Trial) -> dict:
+    params={
+        'n_neighbors': trial.suggest_int('knn_n_neighbors', 1, 30),
+        'weights': trial.suggest_categorical('knn_weights', ['uniform', 'distance']),
+        'leaf_size': trial.suggest_int('knn_leaf_size', 1,100)
+    }
+    return params
 
 def params_RandomForest(trial: Trial) -> dict:
     params = {

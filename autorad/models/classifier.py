@@ -7,6 +7,9 @@ from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 
 from autorad.config import config
@@ -37,6 +40,9 @@ class MLClassifier(ClassifierMixin):
             "SVM",
             "Gaussian Process Classifier",
             "XGBoost",
+            "KNN",
+            "MLP",
+            "DecisionTreeClassifier"
         ]
 
     def __repr__(self):
@@ -68,6 +74,12 @@ class MLClassifier(ClassifierMixin):
                 use_label_encoder=False,
                 **params,
             )
+        elif name == "KNN":
+            model = KNeighborsClassifier(**params)
+        elif name == "MLP":
+            model = MLPClassifier(early_stopping=True, solver='lbfgs', **params)
+        elif name == "DecisionTreeClassifier":
+            model = DecisionTreeClassifier(**params)
         else:
             raise ValueError("Classifier name not recognized.")
 
