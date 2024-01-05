@@ -9,9 +9,11 @@ import pandas as pd
 from boruta import BorutaPy
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.feature_selection import SelectKBest, f_classif, SelectFromModel
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.svm import LinearSVC
 
 from autorad.config import config
 
@@ -51,8 +53,38 @@ class CoreSelector(abc.ABC):
         return self._selected_features
 
 
+class LinearSVCSelector(CoreSelector):
+    def __init__(self):
+        self.model = SelectFromModel(LinearSVC(dual='auto', penalty='l1'))
+        super().__init__()
+    
+    def fit(self, X, y):
+        self.model.fit(X, y)
+        support = self.model.get_support(indices=True)
+        if support is None:
+            raise ValueError("LinearSVC selector failed to select features")
+        selected_columns = support.tolist()
+        self._selected_features = X.columns[selected_columns].tolist()
+
+
+class TreeSelector(CoreSelector):
+    def __init__(self, n_estimators=50):
+        self.n_estimators=n_estimators
+        self.model = SelectFromModel(ExtraTreesClassifier(n_estimators=n_estimators))
+        super().__init__()
+    
+    def fit(self, X, y):
+        self.model.fit(X, y)
+        support = self.model.get_support(indices=True)
+        if support is None:
+            raise ValueError("Tree selector failed to select features")
+        selected_columns = support.tolist()
+        self._selected_features = X.columns[selected_columns].tolist()
+
+
+
 class AnovaSelector(CoreSelector):
-    def __init__(self, n_features: int = 10):
+    def __init__(self, n_features: int = 100):
         self.n_features = n_features
         self.model = SelectKBest(f_classif, k=self.n_features)
         super().__init__()
@@ -85,6 +117,7 @@ class LassoSelector(CoreSelector):
         self.model = self.model.set_params(**best_params)
 
     def fit(self, X, y):
+        self.optimize_params(X, y)
         self.model.fit(X, y)
         coefficients = self.model.coef_
         importance = np.abs(coefficients)
@@ -122,6 +155,8 @@ class FeatureSelectorFactory:
             "anova": AnovaSelector,
             "lasso": LassoSelector,
             "boruta": BorutaSelector,
+            "linear_svc": LinearSVCSelector,
+            "tree": TreeSelector
         }
 
     def register_selector(self, name, selector):
