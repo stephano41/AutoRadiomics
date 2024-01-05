@@ -34,7 +34,7 @@ def params_DecisionTreeClassifier(trial: Trial) -> dict:
 
 
 def params_MLP(trial: Trial) -> dict:
-    num_hidden_layers = trial.suggest_int('mlp_num_hidden_layers')
+    num_hidden_layers = trial.suggest_int('mlp_num_hidden_layers',1,5)
     hidden_layer_sizes=[]
     for layer in range(num_hidden_layers):
         hidden_layer_sizes.append(trial.suggest_int(f'mlp_hidden_layer_{layer}', 1,200))
