@@ -118,12 +118,12 @@ class LassoSelector(CoreSelector):
 
     def fit(self, X, y):
         self.optimize_params(X, y)
-        self.model.fit(X, y)
-        coefficients = self.model.coef_
-        importance = np.abs(coefficients)
-        selected_columns = np.where(importance > 0)[0].tolist()
-        if not selected_columns:
-            raise ValueError("Lasso failed to select features.")
+        selector = SelectFromModel(self.model)
+        selector.fit(X, y)
+        support = selector.get_support(indices=True)
+        if support is None:
+            raise ValueError("LASSO failed to select features.")
+        selected_columns = support.tolist()
         self._selected_features = X.columns[selected_columns].tolist()
 
     def params_to_optimize(self):
