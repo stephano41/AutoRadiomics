@@ -100,7 +100,7 @@ class AnovaSelector(CoreSelector):
 
 class LassoSelector(CoreSelector):
     def __init__(self, alpha=0.002):
-        self.model = Lasso(random_state=config.SEED, alpha=alpha)
+        self.model = Lasso(random_state=config.SEED, alpha=alpha, max_iter=10000)
         super().__init__()
 
     def optimize_params(self, X, y, verbose=0):
@@ -122,9 +122,11 @@ class LassoSelector(CoreSelector):
         selector.fit(X, y)
         support = selector.get_support(indices=True)
         if support is None:
-            raise ValueError("LASSO failed to select features.")
-        selected_columns = support.tolist()
-        self._selected_features = X.columns[selected_columns].tolist()
+            log.warning("LASSO failed to select features.")
+            self._selected_features = X.columns.tolist()
+        else:
+            selected_columns = support.tolist()
+            self._selected_features = X.columns[selected_columns].tolist()
 
     def params_to_optimize(self):
         return {"alpha": np.logspace(-5, 1, num=100)}
