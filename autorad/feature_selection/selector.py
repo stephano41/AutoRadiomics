@@ -29,7 +29,7 @@ class CoreSelector(abc.ABC):
 
     @abc.abstractmethod
     def fit(self, X: pd.DataFrame, y: pd.Series) -> list[int]:
-        """fit method should update self.selected_columns.
+        """fit method should update self._selected_features.
         If no features are selected, it should raise
         NoFeaturesSelectedError.
         """
@@ -53,54 +53,65 @@ class CoreSelector(abc.ABC):
         return self._selected_features
 
 
-class LinearSVCSelector(CoreSelector):
+class AnovaSelector(CoreSelector):
+    def __init__(self, alpha=0.05):
+
+        self.alpha = alpha
+        # self.model = SelectKBest(f_classif, k=self.n_features)
+        super().__init__()
+
+    def fit(self, X, y):
+        indices = self.run_anova(X, y)
+        self._selected_features = X.columns[indices].tolist()
+
+    def run_anova(self, X, y):
+        _, p_value = f_classif(X, y)
+        indices = np.where(p_value<self.alpha)[0]
+        if len(indices<=0):
+            raise ValueError("ANOVA failed to select features.")
+        return indices
+    
+
+
+class LinearSVCSelector(AnovaSelector):
     def __init__(self):
         self.model = SelectFromModel(LinearSVC(dual='auto', penalty='l1'))
         super().__init__()
-    
+
     def fit(self, X, y):
-        self.model.fit(X, y)
+        indices = self.run_anova(X, y)
+        _X, _y = X.iloc[indices], y.iloc[indices]
+
+        self.model.fit(_X, _y)
+
         support = self.model.get_support(indices=True)
         if support is None:
             raise ValueError("LinearSVC selector failed to select features")
         selected_columns = support.tolist()
-        self._selected_features = X.columns[selected_columns].tolist()
+        self._selected_features = _X.columns[selected_columns].tolist()
 
 
-class TreeSelector(CoreSelector):
+class TreeSelector(AnovaSelector):
     def __init__(self, n_estimators=50):
         self.n_estimators=n_estimators
         self.model = SelectFromModel(ExtraTreesClassifier(n_estimators=n_estimators))
         super().__init__()
     
     def fit(self, X, y):
-        self.model.fit(X, y)
+        indices = self.run_anova(X, y)
+        _X, _y = X.iloc[indices], y.iloc[indices]
+
+        self.model.fit(_X, _y)
         support = self.model.get_support(indices=True)
         if support is None:
             raise ValueError("Tree selector failed to select features")
         selected_columns = support.tolist()
-        self._selected_features = X.columns[selected_columns].tolist()
+        self._selected_features = _X.columns[selected_columns].tolist()
 
 
-
-class AnovaSelector(CoreSelector):
-    def __init__(self, n_features: int = 100):
-        self.n_features = n_features
-        self.model = SelectKBest(f_classif, k=self.n_features)
-        super().__init__()
-
-    def fit(self, X, y):
-        self.model.fit(X, y)
-        support = self.model.get_support(indices=True)
-        if support is None:
-            raise ValueError("ANOVA failed to select features.")
-        selected_columns = support.tolist()
-        self._selected_features = X.columns[selected_columns].tolist()
-
-
-class LassoSelector(CoreSelector):
+class LassoSelector(AnovaSelector):
     def __init__(self, alpha=0.002):
-        self.model = Lasso(random_state=config.SEED, alpha=alpha, max_iter=10000)
+        self.model = SelectFromModel(Lasso(random_state=config.SEED, alpha=alpha, max_iter=10000))
         super().__init__()
 
     def optimize_params(self, X, y, verbose=0):
@@ -117,16 +128,18 @@ class LassoSelector(CoreSelector):
         self.model = self.model.set_params(**best_params)
 
     def fit(self, X, y):
-        self.optimize_params(X, y)
-        selector = SelectFromModel(self.model)
-        selector.fit(X, y)
-        support = selector.get_support(indices=True)
+        indices = self.run_anova(X, y)
+        _X, _y = X.iloc[indices], y.iloc[indices]
+        self.optimize_params(_X, _y)
+        self.model.fit(_X, _y)
+
+        support = self.model.get_support(indices=True)
         if support is None:
             log.warning("LASSO failed to select features.")
-            self._selected_features = X.columns.tolist()
+            self._selected_features = _X.columns.tolist()
         else:
             selected_columns = support.tolist()
-            self._selected_features = X.columns[selected_columns].tolist()
+            self._selected_features = _X.columns[selected_columns].tolist()
 
     def params_to_optimize(self):
         return {"alpha": np.logspace(-5, 1, num=100)}
