@@ -14,6 +14,7 @@ from sklearn.linear_model import Lasso
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.svm import LinearSVC
+import math
 
 from autorad.config import config
 
@@ -64,11 +65,19 @@ class AnovaSelector(CoreSelector):
         indices = self.run_anova(X, y)
         self._selected_features = X.columns[indices].tolist()
 
-    def run_anova(self, X, y):
+    def run_anova(self, X, y, pass_through=False):
         _, p_value = f_classif(X, y)
         indices = np.where(p_value<self.alpha)[0]
         if len(indices<=0):
-            raise ValueError("ANOVA failed to select features.")
+            if pass_through:
+                return np.arange(len(X))
+            log.info("ANOVA failed to select features, selecting the top sqrt of X instead")
+            fail_model = SelectKBest(f_classif, k=int(math.sqrt(len(X))))
+            fail_model.fit(X, y)
+            support = fail_model.get_support(indices=True)
+            selected_columns = support.tolist()
+            self._selected_features = X.columns[selected_columns].tolist()
+
         return indices
     
 
@@ -79,7 +88,7 @@ class LinearSVCSelector(AnovaSelector):
         super().__init__()
 
     def fit(self, X, y):
-        indices = self.run_anova(X, y)
+        indices = self.run_anova(X, y, True)
         _X, _y = X.iloc[indices], y.iloc[indices]
 
         self.model.fit(_X, _y)
@@ -98,7 +107,7 @@ class TreeSelector(AnovaSelector):
         super().__init__()
     
     def fit(self, X, y):
-        indices = self.run_anova(X, y)
+        indices = self.run_anova(X, y, True)
         _X, _y = X.iloc[indices], y.iloc[indices]
 
         self.model.fit(_X, _y)
@@ -128,14 +137,14 @@ class LassoSelector(AnovaSelector):
         self.model = self.model.set_params(**best_params)
 
     def fit(self, X, y):
-        indices = self.run_anova(X, y)
+        indices = self.run_anova(X, y, True)
         _X, _y = X.iloc[indices], y.iloc[indices]
         self.optimize_params(_X, _y)
         self.model.fit(_X, _y)
 
         support = self.model.get_support(indices=True)
         if support is None:
-            log.warning("LASSO failed to select features.")
+            log.info("LASSO failed to select features.")
             self._selected_features = _X.columns.tolist()
         else:
             selected_columns = support.tolist()
