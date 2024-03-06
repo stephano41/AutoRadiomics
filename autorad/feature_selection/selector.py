@@ -143,8 +143,6 @@ class LassoSelector(AnovaSelector):
         selector = SelectFromModel(self.model)
         selector.fit(X, y)
         support = selector.get_support(indices=True)
-
-        support = self.model.get_support(indices=True)
         if support is None:
             log.info("LASSO failed to select features.")
             self._selected_features = _X.columns.tolist()
