@@ -20,7 +20,7 @@ def create_oversampling_model(method: str|dict, random_state: int = config.SEED)
     else:
         raise TypeError(f"method is not a recognised datatype, got {type(method)}")
 
-def _checks(method_name, kwargs):
+def _checks(method_name, **kwargs):
     if method_name == "ADASYN":
         return ADASYN(**kwargs)
     elif method_name == "SMOTE":
