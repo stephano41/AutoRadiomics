@@ -89,9 +89,9 @@ class LinearSVCSelector(AnovaSelector):
 
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
-        _X, _y = X.iloc[indices], y.iloc[indices]
+        _X = X.iloc[:, indices]
 
-        self.model.fit(_X, _y)
+        self.model.fit(_X, y)
 
         support = self.model.get_support(indices=True)
         if support is None:
@@ -108,9 +108,9 @@ class TreeSelector(AnovaSelector):
     
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
-        _X, _y = X.iloc[indices], y.iloc[indices]
+        _X = X.iloc[:, indices]
 
-        self.model.fit(_X, _y)
+        self.model.fit(_X, y)
         support = self.model.get_support(indices=True)
         if support is None:
             raise ValueError("Tree selector failed to select features")
@@ -138,10 +138,10 @@ class LassoSelector(AnovaSelector):
 
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
-        _X, _y = X.iloc[indices], y.iloc[indices]
-        self.optimize_params(_X, _y)
+        _X = X.iloc[:, indices]
+        self.optimize_params(_X, y)
         selector = SelectFromModel(self.model)
-        selector.fit(X, y)
+        selector.fit(_X, y)
         support = selector.get_support(indices=True)
         if support is None:
             log.info("LASSO failed to select features.")
