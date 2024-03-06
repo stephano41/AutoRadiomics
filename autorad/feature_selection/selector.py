@@ -68,7 +68,7 @@ class AnovaSelector(CoreSelector):
     def run_anova(self, X, y, pass_through=False):
         _, p_value = f_classif(X, y)
         indices = np.where(p_value<self.alpha)[0]
-        if len(indices<=0):
+        if len(indices)<=0:
             if pass_through:
                 return np.arange(len(X))
             log.info("ANOVA failed to select features, selecting the top sqrt of X instead")
