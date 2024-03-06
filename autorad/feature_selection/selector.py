@@ -120,7 +120,7 @@ class TreeSelector(AnovaSelector):
 
 class LassoSelector(AnovaSelector):
     def __init__(self, alpha=0.002):
-        self.model = SelectFromModel(Lasso(random_state=config.SEED, alpha=alpha, max_iter=10000))
+        self.model = Lasso(random_state=config.SEED, alpha=alpha, max_iter=10000)
         super().__init__()
 
     def optimize_params(self, X, y, verbose=0):
@@ -140,7 +140,9 @@ class LassoSelector(AnovaSelector):
         indices = self.run_anova(X, y, True)
         _X, _y = X.iloc[indices], y.iloc[indices]
         self.optimize_params(_X, _y)
-        self.model.fit(_X, _y)
+        selector = SelectFromModel(self.model)
+        selector.fit(X, y)
+        support = selector.get_support(indices=True)
 
         support = self.model.get_support(indices=True)
         if support is None:
