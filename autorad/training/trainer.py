@@ -7,13 +7,14 @@ import mlflow
 import numpy as np
 from optuna.trial import Trial
 from sklearn.metrics import roc_auc_score
-
+import pickle
 from autorad.config.type_definitions import PathLike
 from autorad.data import FeatureDataset, TrainingData
 from autorad.models import MLClassifier
 from autorad.preprocessing import Preprocessor
 from autorad.training import OptunaOptimizer, train_utils
 from autorad.utils import io, mlflow_utils
+import os
 
 log = logging.getLogger(__name__)
 
@@ -107,6 +108,8 @@ class Trainer:
     def log_to_mlflow(self, study):
         best_auc = study.user_attrs["AUC_val"]
         mlflow.log_metric("AUC_val", best_auc)
+        with open(os.path.join(mlflow.get_artifact_uri().replace('file:///','/'), "optuna_study.pkl"), 'wb') as f:
+            pickle.dump(study, f)
 
         best_model = study.user_attrs["model"]
         best_model.save_to_mlflow()
