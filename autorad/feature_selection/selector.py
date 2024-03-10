@@ -15,6 +15,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.svm import LinearSVC
 import math
+from collections.abc import Mapping
 
 from autorad.config import config
 
@@ -198,7 +199,14 @@ def create_feature_selector(
     *args,
     **kwargs,
 ):
-    selector = FeatureSelectorFactory().get_selector(method, *args, **kwargs)
+    if isinstance(method, str):
+        selector = FeatureSelectorFactory().get_selector(method, *args, **kwargs)
+    elif isinstance(method, Mapping):
+        kwarg_dict = {k:v for k, v in method.items() if k!='_target_'}
+        kwargs.update(kwarg_dict)
+        selector = FeatureSelectorFactory().get_selector(method['_target_'],*args, **kwargs)
+    else:
+        raise TypeError(f"method is not a recognised datatype, got {type(method)}")
     return selector
 
 

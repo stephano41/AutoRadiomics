@@ -85,7 +85,6 @@ class Preprocessor:
         standardize: bool = True,
         feature_selection_method: str | None = None,
         oversampling_method: str | None = None,
-        feature_selection_kwargs: dict[str, Any] | None = None,
         random_state: int = config.SEED,
     ):
         """Performs preprocessing, including:
@@ -99,18 +98,12 @@ class Preprocessor:
                 if None, don't perform selection and leave all features
             oversampling_method: minority class oversampling method,
                 if None, no oversampling
-            feature_selection_kwargs: keyword arguments for feature selection, e.g.
-                {"n_features": 10} for `anova` method
             random_state: seed
         """
         self.standardize = standardize
         self.feature_selection_method = feature_selection_method
         self.oversampling_method = oversampling_method
         self.random_state = random_state
-        if feature_selection_kwargs is None:
-            self.feature_selection_kwargs = {}
-        else:
-            self.feature_selection_kwargs = feature_selection_kwargs
         self.pipeline = self._build_pipeline()
 
     def fit_transform_data(self, data: TrainingData) -> TrainingData:
@@ -268,8 +261,7 @@ class Preprocessor:
                 (
                     "select",
                     create_feature_selector(
-                        method=self.feature_selection_method,
-                        **self.feature_selection_kwargs,
+                        method=self.feature_selection_method
                     ),
                 ),
             )
