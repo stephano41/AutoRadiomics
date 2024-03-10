@@ -80,6 +80,7 @@ class Trainer:
         self,
         auto_preprocess: bool = False,
         experiment_name="model_training",
+        mlflow_start_kwargs={}
     ):
         """
         Run hyperparameter optimization for all the models.
@@ -89,7 +90,7 @@ class Trainer:
         else:
             log.warn("Running training in existing experiment.")
         mlflow.set_experiment(experiment_name)
-        with mlflow.start_run():
+        with mlflow.start_run(**mlflow_start_kwargs):
             study = self.optimizer.create_study(
                 study_name=experiment_name,
             )
