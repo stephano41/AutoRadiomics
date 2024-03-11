@@ -120,7 +120,9 @@ class TreeSelector(AnovaSelector):
 
 
 class LassoSelector(AnovaSelector):
-    def __init__(self, alpha=0.002):
+    def __init__(self, alpha=0.002, n_jobs=None):
+        self.alpha=alpha
+        self.n_jobs=n_jobs
         self.model = Lasso(random_state=config.SEED, alpha=alpha, max_iter=10000)
         super().__init__()
 
@@ -131,6 +133,7 @@ class LassoSelector(AnovaSelector):
             cv=5,
             scoring="neg_mean_squared_error",
             verbose=verbose,
+            n_jobs=self.n_jobs
         )
         search.fit(X, y)
         best_params = search.best_params_
@@ -156,10 +159,11 @@ class LassoSelector(AnovaSelector):
     
 
 class SFSelector(AnovaSelector):
-    def __init__(self, direction='forward', scoring='roc_auc'):
+    def __init__(self, direction='forward', scoring='roc_auc', n_jobs=None):
+        self.n_jobs=n_jobs
         self.direction=direction
         self.scoring=scoring
-        self.model = SequentialFeatureSelector(LogisticRegression(), direction=direction, scoring=scoring)
+        self.model = SequentialFeatureSelector(LogisticRegression(), direction=direction, scoring=scoring, n_jobs=n_jobs)
         super().__init__()
 
     def fit(self, X, y):
@@ -175,10 +179,11 @@ class SFSelector(AnovaSelector):
 
 
 class RFESelector(AnovaSelector):
-    def __init__(self, min_features=2, scoring='roc_auc'):
+    def __init__(self, min_features=2, scoring='roc_auc', n_jobs=None):
+        self.n_jobs=n_jobs
         self.min_features=min_features
         self.scoring=scoring
-        self.model = RFECV(LogisticRegression(), min_features_to_select=min_features, scoring=scoring)
+        self.model = RFECV(LogisticRegression(), min_features_to_select=min_features, scoring=scoring, n_jobs=n_jobs)
         super().__init__()
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
