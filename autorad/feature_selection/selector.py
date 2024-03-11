@@ -9,8 +9,8 @@ import pandas as pd
 from boruta import BorutaPy
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.feature_selection import SelectKBest, f_classif, SelectFromModel
-from sklearn.linear_model import Lasso
+from sklearn.feature_selection import SelectKBest, f_classif, SelectFromModel, RFECV, SequentialFeatureSelector
+from sklearn.linear_model import Lasso, LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.svm import LinearSVC
@@ -153,6 +153,44 @@ class LassoSelector(AnovaSelector):
 
     def params_to_optimize(self):
         return {"alpha": np.logspace(-5, 1, num=100)}
+    
+
+class SFSelector(AnovaSelector):
+    def __init__(self, direction='forward', scoring='roc_auc'):
+        self.direction=direction
+        self.scoring=scoring
+        self.model = SequentialFeatureSelector(LogisticRegression(), direction=direction, scoring=scoring)
+        super().__init__()
+
+    def fit(self, X, y):
+        indices = self.run_anova(X, y, True)
+        _X = X.iloc[:, indices]
+
+        self.model.fit(_X,y)
+        support = self.model.get_support(indices=True)
+        if support is None:
+            raise ValueError("SFSelector failed to select features")
+        selected_columns = support.tolist()
+        self._selected_features=_X.columns[selected_columns].tolist()
+
+
+class RFESelector(AnovaSelector):
+    def __init__(self, min_features=2, scoring='roc_auc'):
+        self.min_features=min_features
+        self.scoring=scoring
+        self.model = RFECV(LogisticRegression(), min_features_to_select=min_features, scoring=scoring)
+        super().__init__()
+
+    def fit(self, X: pd.DataFrame, y: pd.Series):
+        indices = self.run_anova(X, y, True)
+        _X = X.iloc[:, indices]
+
+        self.model.fit(_X,y)
+        support = self.model.get_support(indices=True)
+        if support is None:
+            raise ValueError("RFESelector failed to select features")
+        selected_columns = support.tolist()
+        self._selected_features=_X.columns[selected_columns].tolist()
 
 
 class BorutaSelector(CoreSelector):
@@ -181,7 +219,9 @@ class FeatureSelectorFactory:
             "lasso": LassoSelector,
             "boruta": BorutaSelector,
             "linear_svc": LinearSVCSelector,
-            "tree": TreeSelector
+            "tree": TreeSelector,
+            "sf": SFSelector,
+            "rfe": RFESelector
         }
 
     def register_selector(self, name, selector):
@@ -202,9 +242,9 @@ def create_feature_selector(
     if isinstance(method, str):
         selector = FeatureSelectorFactory().get_selector(method, *args, **kwargs)
     elif isinstance(method, Mapping):
-        kwarg_dict = {k:v for k, v in method.items() if k!='_target_'}
+        kwarg_dict = {k:v for k, v in method.items() if k!='_method_'}
         kwargs.update(kwarg_dict)
-        selector = FeatureSelectorFactory().get_selector(method['_target_'],*args, **kwargs)
+        selector = FeatureSelectorFactory().get_selector(method['_method_'],*args, **kwargs)
     else:
         raise TypeError(f"method is not a recognised datatype, got {type(method)}")
     return selector

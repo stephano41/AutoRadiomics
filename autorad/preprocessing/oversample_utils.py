@@ -15,8 +15,8 @@ def create_oversampling_model(method: str|dict, random_state: int = config.SEED)
     if isinstance(method, str):
         return _checks(method, random_state=random_state)
     elif isinstance(method, Mapping):
-        kwarg_dict = {k:v for k, v in method.items() if k!='_target_'}
-        return _checks(method['_target_'], random_state=random_state, **kwarg_dict)
+        kwarg_dict = {k:v for k, v in method.items() if k!='_method_'}
+        return _checks(method['_method_'], random_state=random_state, **kwarg_dict)
     else:
         raise TypeError(f"method is not a recognised datatype, got {type(method)}")
 
