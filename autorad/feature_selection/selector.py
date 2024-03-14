@@ -256,7 +256,7 @@ def create_feature_selector(
         kwarg_dict = {k:v for k, v in method.items() if k!='_method_'}
         kwargs.update(kwarg_dict)
         selector = FeatureSelectorFactory().get_selector(method['_method_'],*args, **kwargs)
-    elif isistance(method, str):
+    elif isinstance(method, str):
         selector = FeatureSelectorFactory().get_selector(method, *args, **kwargs)
     else:
         raise TypeError(f"method is not a recognised datatype, got {type(method)}")
