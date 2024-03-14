@@ -16,6 +16,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.svm import LinearSVC
 import math
 from collections.abc import Mapping
+from ast import literal_eval
 
 from autorad.config import config
 
@@ -251,15 +252,28 @@ def create_feature_selector(
     *args,
     **kwargs,
 ):
-    if isinstance(method, str):
-        selector = FeatureSelectorFactory().get_selector(method, *args, **kwargs)
-    elif isinstance(method, Mapping):
+    is_dict = 
+    if recognise_dict(method):
         kwarg_dict = {k:v for k, v in method.items() if k!='_method_'}
         kwargs.update(kwarg_dict)
         selector = FeatureSelectorFactory().get_selector(method['_method_'],*args, **kwargs)
+    elif isistance(method, str):
+        selector = FeatureSelectorFactory().get_selector(method, *args, **kwargs)
     else:
         raise TypeError(f"method is not a recognised datatype, got {type(method)}")
     return selector
+
+
+def recognise_dict(maybe_dict):
+    if isinstance(maybe_dict, Mapping):
+        return True
+    try:
+        eval_dict = literal_eval(maybe_dict)
+        if isinstance(eval_dict, Mapping):
+            return True
+    except ValueError:
+        return False
+    return False
 
 
 class FailoverSelectorWrapper(CoreSelector):
