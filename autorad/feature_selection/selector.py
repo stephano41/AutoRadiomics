@@ -252,27 +252,27 @@ def create_feature_selector(
     *args,
     **kwargs,
 ):
-    if recognise_dict(method):
-        kwarg_dict = {k:v for k, v in method.items() if k!='_method_'}
+    
+    processed_method_param = process_dict(method)
+    if isinstance(processed_method_param, Mapping):
+        kwarg_dict = {k:v for k, v in processed_method_param.items() if k!='_method_'}
         kwargs.update(kwarg_dict)
-        selector = FeatureSelectorFactory().get_selector(method['_method_'],*args, **kwargs)
-    elif isinstance(method, str):
-        selector = FeatureSelectorFactory().get_selector(method, *args, **kwargs)
+        selector = FeatureSelectorFactory().get_selector(processed_method_param['_method_'],*args, **kwargs)
+    elif isinstance(processed_method_param, str):
+        selector = FeatureSelectorFactory().get_selector(processed_method_param, *args, **kwargs)
     else:
-        raise TypeError(f"method is not a recognised datatype, got {type(method)}")
+        raise TypeError(f"method is not a recognised datatype, got {type(processed_method_param)}")
     return selector
 
 
-def recognise_dict(maybe_dict):
-    if isinstance(maybe_dict, Mapping):
-        return True
+def process_dict(maybe_dict):
     try:
         eval_dict = literal_eval(maybe_dict)
         if isinstance(eval_dict, Mapping):
-            return True
+            return eval_dict
     except ValueError:
-        return False
-    return False
+        return maybe_dict
+    return maybe_dict
 
 
 class FailoverSelectorWrapper(CoreSelector):

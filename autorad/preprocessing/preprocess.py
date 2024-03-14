@@ -58,7 +58,7 @@ def run_auto_preprocessing(
 
     preprocessed = {}
     for selection_method in feature_selection_methods:
-        preprocessed[selection_method] = {}
+        preprocessed[str(selection_method)] = {}
         for oversampling_method in oversampling_methods:
             preprocessor = Preprocessor(
                 standardize=True,
@@ -66,15 +66,15 @@ def run_auto_preprocessing(
                 oversampling_method=oversampling_method,
             )
             try:
-                preprocessed[selection_method][
-                    oversampling_method
+                preprocessed[str(selection_method)][
+                    str(oversampling_method)
                 ] = preprocessor.fit_transform_data(data)
             except AssertionError:
                 log.error(
                     f"Preprocessing failed with {selection_method} and {oversampling_method}."
                 )
-        if not preprocessed[selection_method]:
-            del preprocessed[selection_method]
+        if not preprocessed[str(selection_method)]:
+            del preprocessed[str(selection_method)]
     with open(Path(result_dir) / "preprocessed.pkl", "wb") as f:
         joblib.dump(preprocessed, f)
 
