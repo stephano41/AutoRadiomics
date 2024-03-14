@@ -252,7 +252,6 @@ def create_feature_selector(
     *args,
     **kwargs,
 ):
-    is_dict = 
     if recognise_dict(method):
         kwarg_dict = {k:v for k, v in method.items() if k!='_method_'}
         kwargs.update(kwarg_dict)
