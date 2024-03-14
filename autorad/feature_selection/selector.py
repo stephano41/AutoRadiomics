@@ -159,11 +159,18 @@ class LassoSelector(AnovaSelector):
     
 
 class SFSelector(AnovaSelector):
-    def __init__(self, direction='forward', scoring='roc_auc', n_jobs=None):
+    def __init__(self, direction='forward', scoring='roc_auc', n_jobs=None, n_features_to_select='auto',tol=0.1):
         self.n_jobs=n_jobs
         self.direction=direction
         self.scoring=scoring
-        self.model = SequentialFeatureSelector(LogisticRegression(), direction=direction, scoring=scoring, n_jobs=n_jobs)
+        self.n_features_to_select=n_features_to_select
+        self.tol=tol
+        self.model = SequentialFeatureSelector(LogisticRegression(), 
+                                               direction=direction, 
+                                               scoring=scoring, 
+                                               n_jobs=n_jobs, 
+                                               n_features_to_select=n_features_to_select,
+                                               tol=tol)
         super().__init__()
 
     def fit(self, X, y):
