@@ -256,15 +256,7 @@ class Preprocessor:
                     StandardScaler().set_output(transform="pandas"),
                 )
             )
-        if self.feature_selection_method is not None:
-            steps.append(
-                (
-                    "select",
-                    create_feature_selector(
-                        method=self.feature_selection_method
-                    ),
-                ),
-            )
+        # Over sample first, before feature select
         if self.oversampling_method is not None:
             steps.append(
                 (
@@ -275,6 +267,16 @@ class Preprocessor:
                     )
                 ),
             )
+        if self.feature_selection_method is not None:
+            steps.append(
+                (
+                    "select",
+                    create_feature_selector(
+                        method=self.feature_selection_method
+                    ),
+                ),
+            )
+
         pipeline = Pipeline(steps)
         return pipeline
     
