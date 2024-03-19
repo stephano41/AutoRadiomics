@@ -17,6 +17,9 @@ from sklearn.svm import LinearSVC
 import math
 from collections.abc import Mapping
 from ast import literal_eval
+from mrmr import mrmr_classif
+from sklearn.decomposition import PCA
+
 
 from autorad.config import config
 
@@ -225,6 +228,36 @@ class BorutaSelector(CoreSelector):
         self._selected_features = X.columns[selected_columns].tolist()
 
 
+class MRMRSelector(CoreSelector):
+    def __init__(self, K=None):
+        self.K = K
+        
+        super().__init__()
+    
+    def fit(self, X, y):
+        if self.K is None:
+            num_features = int(math.sqrt(len(X.columns)))
+        else:
+            num_features = self.K
+        
+        self._selected_features = mrmr_classif(X=X, y=y, K=num_features)
+
+
+class PCASelector(CoreSelector):
+    def __init__(self, n_components=None):
+        self.n_components=n_components
+        self.model = PCA(n_components).set_output(transform='pandas')
+        super().__init__()
+
+    
+    def fit(self, X, y=None):
+        self.model.fit(X)
+        self._selected_features = list(self.model.get_feature_names_out())
+    
+    def transform(self, X, y=None):
+        return self.model.transform(X)
+
+
 class FeatureSelectorFactory:
     def __init__(self):
         self.selectors = {
@@ -234,7 +267,9 @@ class FeatureSelectorFactory:
             "linear_svc": LinearSVCSelector,
             "tree": TreeSelector,
             "sf": SFSelector,
-            "rfe": RFESelector
+            "rfe": RFESelector,
+            "mrmr": MRMRSelector,
+            "pca": PCASelector
         }
 
     def register_selector(self, name, selector):

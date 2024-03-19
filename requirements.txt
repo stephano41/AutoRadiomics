@@ -1,13 +1,13 @@
 pyradiomics>=3.0.1
 scikit-learn>=1.2.0
-SimpleITK==2.1.1.2
+SimpleITK>=2.1.1.2
 pandas>=1.4.3
 scipy==1.9
 pyyaml==6.0
 statsmodels==0.13.2
 mlflow>=2.0.1
 nibabel==3.2.1
-matplotlib==3.5
+matplotlib>=3.5
 xnat==0.4.2
 tqdm==4.62.3
 pqdm>=0.2.0
@@ -21,3 +21,4 @@ scikit-image==0.19
 pydicom-seg==0.4.1
 ipython==8.10.0
 rich==13.3.1
+mrmr_selection
