@@ -1,27 +1,24 @@
 from typing import Callable
+from sklearn.base import is_classifier
 
 from optuna.trial import Trial
 
 
 def get_param_fn(model_name) -> Callable:
-    if model_name == "Random Forest":
-        param_fn = params_RandomForest
-    elif model_name == "XGBoost":
-        param_fn = params_XGBoost
-    elif model_name == "Logistic Regression":
-        param_fn = params_LogReg
-    elif model_name == "SVM":
-        param_fn = params_SVM
-    elif model_name == 'KNN':
-        param_fn = params_KNN
-    elif model_name == "MLP":
-        param_fn = params_MLP
-    elif model_name == "DecisionTreeClassifier":
-        param_fn = params_DecisionTreeClassifier
-    else:
-        raise ValueError(
-            f"Optuna parameters for {model_name} not implemented!"
-        )
+    param_map = {"Random Forest": params_RandomForest,
+                 "XGBoost": params_XGBoost,
+                 "Logistic Regression": params_LogReg,
+                 "SVM": params_SVM,
+                 "KNN": params_KNN,
+                 "MLP": params_MLP,
+                 "DecisionTreeClassifier":params_DecisionTreeClassifier,
+                 "Catboost": params_Catboost
+                 }
+
+    param_fn = param_map.get(model_name, None)
+    if param_fn is None:
+        raise ValueError(f"Optuna parameters for {model_name} not implemented!" )
+
     return param_fn
 
 
@@ -139,3 +136,14 @@ def params_preprocessing(trial):
         ),
     }
     return params
+
+def params_Catboost(trial: Trial) -> dict:
+    params = {
+        "eta": trial.suggest_categorical("catboost_eta", [0.0000001,0.000001,0.0001,0.001,0.01,0.0005,0.005,0.05,0.1,0.15,0.2,0.3,0.4,0.5,]),
+        "depth": trial.suggest_int("catboost_depth",1,12,1),
+        "n_estimators": trial.suggest_int("catboost_n_estimators",10,300,10),
+        "random_strength": trial.suggest_float("catboost_random_strength",0,0.8,0.1),
+        "l2_leaf_reg": trial.suggest_categorical("catboost_l2_leaf_reg", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 50, 100, 200])
+
+
+    }
