@@ -156,11 +156,10 @@ class Preprocessor:
             Xt = transform.transform(Xt)
         return Xt
 
-    def _fit_transform(pipeline, X, y):
+    def _fit_transform(self, X, y):
         Xt = X
         yt = y
         for _, _, transform in self.pipeline._iter(with_final=True, filter_resample=False):
-            print(type(transform))
             if hasattr(transform, "fit_resample"):
         #             print("i got called!")
                 Xt, yt = transform.fit_resample(Xt,yt)
