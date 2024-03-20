@@ -118,14 +118,13 @@ class Preprocessor:
 
         result_X = {}
         result_y = {}
+
+        result_X["train"], result_y["train"] = self._fit_transform(X.train, y.train)
         # if self.oversampling_method is not None:
         #     result_X["train"], result_y["train"] = self.pipeline.fit_resample(X.train, y.train)
         # else:
         #     result_X["train"] = self.pipeline.fit_transform(X.train, y.train)
         #     result_y["train"] = y.train
-        
-        result_X["train"] = self.pipeline.fit_transform(X.train, y.train)
-        result_y["train"] = y.train
 
         # allow for empty test set
         if not X.test.empty:
@@ -150,13 +149,25 @@ class Preprocessor:
         return X_preprocessed, y_preprocessed
     
     def _transform(self, X):
-        # if self.oversampling_method is not None and hasattr(self.pipeline.steps[-1][1], "fit_resample"):
-        #     Xt=X
-        #     for _,_, transform in self.pipeline._iter(with_final=False):
-        #         Xt=transform.transform(Xt)
-        #     return Xt
-        
-        return self.pipeline.transform(X)
+        Xt = X
+        for _, _, transform in self.pipeline._iter(with_final=True, filter_resample=False):
+            if hasattr(transform, "fit_resample"):
+                continue
+            Xt = transform.transform(Xt)
+        return Xt
+
+    def _fit_transform(pipeline, X, y):
+        Xt = X
+        yt = y
+        for _, _, transform in self.pipeline._iter(with_final=True, filter_resample=False):
+            print(type(transform))
+            if hasattr(transform, "fit_resample"):
+        #             print("i got called!")
+                Xt, yt = transform.fit_resample(Xt,yt)
+            else:
+                transform.fit(Xt, yt)
+                Xt = transform.transform(Xt)
+        return Xt, yt
 
 
     def _fit_transform_cv_folds(
@@ -188,13 +199,12 @@ class Preprocessor:
             # reinstantiate pipeline
             self.pipeline = self._build_pipeline()
 
+            result_df_X_train, result_y_train = self._fit_transform(X_train, y_train)
             # if self.oversampling_method is not None:
             #     result_df_X_train, result_y_train = self.pipeline.fit_resample(X_train, y_train)
             # else:
             #     result_df_X_train = self.pipeline.fit_transform(X_train, y_train)
             #     result_y_train = y_train
-            result_df_X_train = self.pipeline.fit_transform(X_train, y_train)
-            result_y_train = y_train
 
             result_df_X_val = self._transform(X_val)
 
