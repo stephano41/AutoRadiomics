@@ -44,6 +44,8 @@ class FeatureExtractor:
             extraction_params
         )
         log.info(f"Using extraction params from {self.extraction_params}")
+        logging.getLogger("radiomics.glcm").setLevel(logging.ERROR)
+        
         self.n_jobs = utils.set_n_jobs(n_jobs)
         self._initialize_extractor()
 
