@@ -11,6 +11,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
+from catboost import CatBoostClassifier
 
 from autorad.config import config
 from autorad.models import optuna_params
@@ -42,7 +43,8 @@ class MLClassifier(ClassifierMixin):
             "XGBoost",
             "KNN",
             "MLP",
-            "DecisionTreeClassifier"
+            "DecisionTreeClassifier",
+            "Catboost"
         ]
 
     def __repr__(self):
@@ -80,6 +82,9 @@ class MLClassifier(ClassifierMixin):
             model = MLPClassifier(early_stopping=True, solver='lbfgs', **params)
         elif name == "DecisionTreeClassifier":
             model = DecisionTreeClassifier(**params)
+        elif name == "Catboost":
+            logging.getLogger("catboost").setLevel(logging.ERROR)
+            model = CatBoostClassifier(**params)
         else:
             raise ValueError("Classifier name not recognized.")
 

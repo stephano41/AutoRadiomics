@@ -22,3 +22,4 @@ pydicom-seg==0.4.1
 ipython==8.10.0
 rich==13.3.1
 mrmr_selection
+catboost
