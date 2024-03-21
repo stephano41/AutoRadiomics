@@ -147,3 +147,4 @@ def params_Catboost(trial: Trial) -> dict:
 
 
     }
+    return params
