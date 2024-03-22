@@ -108,11 +108,8 @@ class Trainer:
     def log_to_mlflow(self, study):
         best_auc = study.user_attrs["AUC_val"]
         mlflow.log_metric("AUC_val", best_auc)
-        with open(os.path.join(mlflow.get_artifact_uri().replace('file:///','/'), "optuna_study.pkl"), 'wb') as f:
-            pickle.dump(study, f)
 
-        study_df = study.trials_dataframe()
-        study_df.to_csv(os.path.join(mlflow.get_artifact_uri().replace('file:///','/'), 'study_df.csv'))
+        train_utils.log_optuna(study)
 
         best_model = study.user_attrs["model"]
         best_model.save_to_mlflow()
@@ -125,7 +122,6 @@ class Trainer:
         train_utils.log_splits(self.dataset.splits)
 
         data_preprocessed = study.user_attrs["data_preprocessed"]
-        train_utils.log_shap(best_model, data_preprocessed.X.train)
         self.log_train_auc(best_model, data_preprocessed)
 
     def log_train_auc(self, model: MLClassifier, data: TrainingData):

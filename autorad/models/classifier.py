@@ -132,7 +132,7 @@ class MLClassifier(ClassifierMixin):
     def score(self, X, y):
         return self.model.score(X, y)
 
-    def get_params(self, deep):
+    def get_params(self, deep=False):
         return self.model.get_params(deep)
 
     def set_params(self, **params):

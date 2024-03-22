@@ -1,19 +1,22 @@
 import tempfile
 from pathlib import Path
+from typing import Sequence
 
 import mlflow
 import pandas as pd
 import shap
+from optuna.study import Study
+import optuna
 
 from autorad.data import FeatureDataset
 from autorad.models import MLClassifier
 from autorad.utils import io, mlflow_utils
 
 
-def get_model_by_name(name, models):
+def get_model_by_name(name: str, models: Sequence[MLClassifier]) -> MLClassifier:
     for model in models:
         if model.name == name:
-            return model
+            return MLClassifier(type(model.model)(**model.model.get_params()), name, model.params)
     raise ValueError(f"Model with name {name} not found")
 
 
@@ -43,3 +46,17 @@ def log_dataset(dataset: FeatureDataset):
         io.save_yaml(dataset_config, save_dir / "dataset_config.yaml")
         dataset.df.to_csv(save_dir / "df.csv", index=False)
         mlflow.log_artifacts(str(save_dir), "feature_dataset")
+
+
+def log_optuna(study: Study):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        save_dir = Path(tmp_dir) / "hyperparameter_study"
+        save_dir.mkdir(exist_ok=True)
+        study.trials_dataframe().to_csv(save_dir / "study_df.csv")
+        mlflow.log_artifacts(str(save_dir), "hyperparameter_study")
+    
+    optimisation_history_plot = optuna.visualization.plot_optimization_history(study)
+    mlflow.log_figure(optimisation_history_plot,'hyperparameter_study/optimisation_history.html')
+
+    parallel_coordinate_plot = optuna.visualization.plot_parallel_coordinate(study, params=['oversampling_method', 'feature_selection_method','model'])
+    mlflow.log_figure(parallel_coordinate_plot,'hyperparameter_study/parallel_coordinate.html')
