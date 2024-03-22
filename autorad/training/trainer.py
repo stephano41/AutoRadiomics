@@ -111,6 +111,9 @@ class Trainer:
         with open(os.path.join(mlflow.get_artifact_uri().replace('file:///','/'), "optuna_study.pkl"), 'wb') as f:
             pickle.dump(study, f)
 
+        study_df = study.trials_dataframe()
+        study_df.to_csv(os.path.join(mlflow.get_artifact_uri().replace('file:///','/'), 'study_df.csv'))
+
         best_model = study.user_attrs["model"]
         best_model.save_to_mlflow()
 
