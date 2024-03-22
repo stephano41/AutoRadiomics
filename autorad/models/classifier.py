@@ -84,7 +84,7 @@ class MLClassifier(ClassifierMixin):
             model = DecisionTreeClassifier(**params)
         elif name == "Catboost":
             logging.getLogger("catboost").setLevel(logging.ERROR)
-            model = CatBoostClassifier(**params, silent=True, verbose=False, allow_writing_files=False)
+            model = CatBoostClassifier(**params, silent=True, allow_writing_files=False)
         else:
             raise ValueError("Classifier name not recognized.")
 
