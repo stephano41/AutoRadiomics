@@ -271,7 +271,7 @@ class Preprocessor:
                 )
             )
         # Over sample first, before feature select
-        if self.oversampling_method is not None:
+        if self.oversampling_method is not None and self.oversampling_method != "None":
             steps.append(
                 (
                     "oversample",
@@ -281,7 +281,7 @@ class Preprocessor:
                     )
                 ),
             )
-        if self.feature_selection_method is not None:
+        if self.feature_selection_method is not None and self.feature_selection_method != "None":
             steps.append(
                 (
                     "select",
