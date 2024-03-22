@@ -84,7 +84,7 @@ class MLClassifier(ClassifierMixin):
             model = DecisionTreeClassifier(**params)
         elif name == "Catboost":
             logging.getLogger("catboost").setLevel(logging.ERROR)
-            model = CatBoostClassifier(**params)
+            model = CatBoostClassifier(**params, silent=True, verbose=False, allow_writing_files=False)
         else:
             raise ValueError("Classifier name not recognized.")
 
@@ -157,7 +157,7 @@ class MLClassifier(ClassifierMixin):
     def feature_importance(self):
         if self.name == "Logistic Regression":
             importance = self.model.coef_[0]
-        elif self.name in ["AdaBoost", "Random Forest", "XGBoost"]:
+        elif self.name in ["AdaBoost", "Random Forest", "XGBoost", "DecisionTreeClassifier"]:
             importance = self.model.feature_importances_
         else:
             raise ValueError(

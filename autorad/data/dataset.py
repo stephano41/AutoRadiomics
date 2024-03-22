@@ -104,7 +104,7 @@ class TrainingData:
     def __repr__(self):
         return (
             f"TrainingData with {len(self.y.train)} training observations, "
-            f"{len(self.y.test)} test observations, {self.X.train.shape[1]} feature columns "
+            f"{0 if self.y.test is None else len(self.y.test)} test observations, {self.X.train.shape[1]} feature columns "
             f"and {self.meta.train.shape[1]} meta columns."
         )
 

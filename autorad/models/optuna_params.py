@@ -139,7 +139,7 @@ def params_preprocessing(trial):
 
 def params_Catboost(trial: Trial) -> dict:
     params = {
-        "eta": trial.suggest_categorical("catboost_eta", [0.0000001,0.000001,0.0001,0.001,0.01,0.0005,0.005,0.05,0.1,0.15,0.2,0.3,0.4,0.5,]),
+        "eta": trial.suggest_categorical("catboost_eta", [0.000001,0.0001,0.001,0.01,0.0005,0.005,0.05,0.1,0.15,0.2,0.3,0.4,0.5,]),
         "depth": trial.suggest_int("catboost_depth",1,12, step=1),
         "n_estimators": trial.suggest_int("catboost_n_estimators",10,300,step=10),
         "random_strength": trial.suggest_float("catboost_random_strength",0,0.8, step=0.1),
