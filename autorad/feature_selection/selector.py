@@ -72,18 +72,19 @@ class AnovaSelector(CoreSelector):
 
     def run_anova(self, X, y, pass_through=False):
         _, p_value = f_classif(X, y)
-        indices = np.where(p_value<self.alpha)[0]
-        if len(indices)<=0:
+        support = np.where(p_value < self.alpha)[0]
+        if len(support) > len(X):
+            #     high dimensional data, take steps to prevent overfitting
+            model = SelectKBest(f_classif, k=int(math.sqrt(len(X))))
+            model.fit(X, y)
+            support = model.get_support(indices=True)
+
+        if support is None:
             if pass_through:
                 return np.arange(len(X))
-            log.info("ANOVA failed to select features, selecting the top sqrt of X instead")
-            fail_model = SelectKBest(f_classif, k=int(math.sqrt(len(X))))
-            fail_model.fit(X, y)
-            support = fail_model.get_support(indices=True)
-            selected_columns = support.tolist()
-            self._selected_features = X.columns[selected_columns].tolist()
+            raise ValueError("ANOVA failed to select features, selecting the top sqrt of X instead")
 
-        return indices
+        return support
     
 
 
@@ -106,17 +107,16 @@ class LinearSVCSelector(AnovaSelector):
 
 
 class TreeSelector(AnovaSelector):
-    def __init__(self, n_estimators=50):
-        self.n_estimators=n_estimators
-        self.model = SelectFromModel(ExtraTreesClassifier(n_estimators=n_estimators))
+    def __init__(self):
         super().__init__()
     
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
 
-        self.model.fit(_X, y)
-        support = self.model.get_support(indices=True)
+        model = SelectFromModel(ExtraTreesClassifier(n_estimators=min(len(_X), int(math.sqrt(len(X))))))
+        model.fit(_X, y)
+        support = model.get_support(indices=True)
         if support is None:
             raise ValueError("Tree selector failed to select features")
         selected_columns = support.tolist()
@@ -228,22 +228,25 @@ class BorutaSelector(CoreSelector):
         self._selected_features = X.columns[selected_columns].tolist()
 
 
-class MRMRSelector(CoreSelector):
+class MRMRSelector(AnovaSelector):
     def __init__(self, K=None):
         self.K = K
         
         super().__init__()
     
     def fit(self, X, y):
+        indices = self.run_anova(X, y, True)
+        _X = X.iloc[:,indices]
+
         if self.K is None:
-            num_features = int(math.sqrt(len(X.columns)))
+            num_features = len(_X)
         else:
             num_features = self.K
         
-        self._selected_features = mrmr_classif(X=X, y=y, K=num_features)
+        self._selected_features = mrmr_classif(X=_X, y=y, K=num_features)
 
 
-class PCASelector(CoreSelector):
+class PCASelector(AnovaSelector):
     def __init__(self, n_components=None):
         self.n_components=n_components
         self.model = PCA(n_components).set_output(transform='pandas')
@@ -251,7 +254,10 @@ class PCASelector(CoreSelector):
 
     
     def fit(self, X, y=None):
-        self.model.fit(X)
+        indices = self.run_anova(X, y, True)
+        _X = X.iloc[:,indices]
+
+        self.model.fit(_X)
         self._selected_features = list(self.model.get_feature_names_out())
     
     def transform(self, X, y=None):
