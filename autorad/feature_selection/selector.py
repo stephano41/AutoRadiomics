@@ -60,7 +60,8 @@ class CoreSelector(abc.ABC):
 
 
 class AnovaSelector(CoreSelector):
-    def __init__(self, alpha=0.05):
+    def __init__(self, alpha=0.05, select_top_best='auto'):
+        self.select_top_best=select_top_best
 
         self.alpha = alpha
         # self.model = SelectKBest(f_classif, k=self.n_features)
@@ -73,9 +74,16 @@ class AnovaSelector(CoreSelector):
     def run_anova(self, X, y, pass_through=False):
         _, p_value = f_classif(X, y)
         support = np.where(p_value < self.alpha)[0]
-        if len(support) > len(X):
-            #     high dimensional data, take steps to prevent overfitting
-            model = SelectKBest(f_classif, k=int(math.sqrt(len(X))))
+
+        if not isinstance(self.select_top_best, bool):
+            if self.select_top_best=='auto':
+                n_features = int(math.sqrt(len(X)))
+            elif isinstance(self.select_top_best, int):
+                n_features = self.select_top_best
+            else:
+                raise ValueError("Invalid select_top_best variable type!")
+            
+            model = SelectKBest(f_classif, k=n_features)
             model.fit(X, y)
             support = model.get_support(indices=True)
 
@@ -91,12 +99,13 @@ class AnovaSelector(CoreSelector):
 class LinearSVCSelector(AnovaSelector):
     def __init__(self):
         self.model = SelectFromModel(LinearSVC(dual='auto', penalty='l1'))
-        super().__init__()
+        super().__init__(select_top_best=False)
 
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
-
+        
+        self.model.set_params({'max_features': int(math.sqrt(len(X)))})
         self.model.fit(_X, y)
 
         support = self.model.get_support(indices=True)
@@ -108,13 +117,14 @@ class LinearSVCSelector(AnovaSelector):
 
 class TreeSelector(AnovaSelector):
     def __init__(self):
-        super().__init__()
+        super().__init__(select_top_best=False)
     
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
 
-        model = SelectFromModel(ExtraTreesClassifier(n_estimators=min(len(_X), int(math.sqrt(len(X))))))
+        n_features =int(math.sqrt(len(X)))
+        model = SelectFromModel(ExtraTreesClassifier(n_estimators=min(len(_X), n_features)), max_features=n_features)
         model.fit(_X, y)
         support = model.get_support(indices=True)
         if support is None:
@@ -128,7 +138,7 @@ class LassoSelector(AnovaSelector):
         self.alpha=alpha
         self.n_jobs=n_jobs
         self.model = Lasso(random_state=config.SEED, alpha=alpha, max_iter=10000)
-        super().__init__()
+        super().__init__(select_top_best=False)
 
     def optimize_params(self, X, y, verbose=0):
         search = GridSearchCV(
@@ -148,7 +158,9 @@ class LassoSelector(AnovaSelector):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
         self.optimize_params(_X, y)
-        selector = SelectFromModel(self.model)
+
+        n_features =int(math.sqrt(len(X)))
+        selector = SelectFromModel(self.model, max_features=n_features)
         selector.fit(_X, y)
         support = selector.get_support(indices=True)
         if support is None:
@@ -175,7 +187,7 @@ class SFSelector(AnovaSelector):
                                                n_jobs=n_jobs, 
                                                n_features_to_select=n_features_to_select,
                                                tol=tol)
-        super().__init__()
+        super().__init__(select_top_best=False)
 
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
@@ -195,7 +207,7 @@ class RFESelector(AnovaSelector):
         self.min_features=min_features
         self.scoring=scoring
         self.model = RFECV(LogisticRegression(), min_features_to_select=min_features, scoring=scoring, n_jobs=n_jobs)
-        super().__init__()
+        super().__init__(select_top_best=False)
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         indices = self.run_anova(X, y, True)
@@ -232,14 +244,14 @@ class MRMRSelector(AnovaSelector):
     def __init__(self, K=None):
         self.K = K
         
-        super().__init__()
+        super().__init__(select_top_best=False)
     
     def fit(self, X, y):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:,indices]
 
         if self.K is None:
-            num_features = len(_X)
+            num_features = int(math.sqrt(len(X)))
         else:
             num_features = self.K
         
@@ -251,7 +263,7 @@ class PCASelector(AnovaSelector):
         self.n_components=n_components
         self.model = PCA(n_components).set_output(transform='pandas')
         self.anova_selected=None
-        super().__init__()
+        super().__init__(select_top_best=False)
 
     
     def fit(self, X, y=None):
@@ -259,6 +271,8 @@ class PCASelector(AnovaSelector):
         self.anova_selected = X.columns[indices].tolist()
         _X = X.iloc[:,indices]
 
+        if self.n_components is None:
+            self.model.set_params({'n_components': int(math.sqrt(len(X)))})
         self.model.fit(_X)
         self._selected_features = list(self.model.get_feature_names_out())
     
