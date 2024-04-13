@@ -105,7 +105,7 @@ class LinearSVCSelector(AnovaSelector):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
         
-        self.model.set_params({'max_features': int(math.sqrt(len(X)))})
+        self.model.set_params(**{'max_features': int(math.sqrt(len(X)))})
         self.model.fit(_X, y)
 
         support = self.model.get_support(indices=True)
@@ -272,7 +272,7 @@ class PCASelector(AnovaSelector):
         _X = X.iloc[:,indices]
 
         if self.n_components is None:
-            self.model.set_params({'n_components': int(math.sqrt(len(X)))})
+            self.model.set_params(**{'n_components': int(math.sqrt(len(X)))})
         self.model.fit(_X)
         self._selected_features = list(self.model.get_feature_names_out())
     
