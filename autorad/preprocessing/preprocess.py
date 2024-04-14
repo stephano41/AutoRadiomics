@@ -25,6 +25,7 @@ def run_auto_preprocessing(
     use_feature_selection: bool = True,
     oversampling_methods: list[str] | None = None,
     feature_selection_methods: list[str] | None = None,
+    feature_first=True
 ):
     """Run preprocessing with a variety of feature selection and oversampling methods.
 
@@ -64,6 +65,7 @@ def run_auto_preprocessing(
                 standardize=True,
                 feature_selection_method=selection_method,
                 oversampling_method=oversampling_method,
+                feature_first=feature_first
             )
             try:
                 preprocessed[str(selection_method)][
@@ -86,6 +88,7 @@ class Preprocessor:
         feature_selection_method: str | None = None,
         oversampling_method: str | None = None,
         random_state: int = config.SEED,
+        feature_first=True
     ):
         """Performs preprocessing, including:
         1. standardization
@@ -104,6 +107,7 @@ class Preprocessor:
         self.feature_selection_method = feature_selection_method
         self.oversampling_method = oversampling_method
         self.random_state = random_state
+        self.feature_first = feature_first
         self.pipeline = self._build_pipeline()
 
     def fit_transform_data(self, data: TrainingData) -> TrainingData:
@@ -270,26 +274,29 @@ class Preprocessor:
                     StandardScaler().set_output(transform="pandas"),
                 )
             )
-        if self.feature_selection_method is not None and self.feature_selection_method != "None":
-            steps.append(
-                (
-                    "select",
-                    create_feature_selector(
-                        method=self.feature_selection_method
-                    ),
-                ),
-            )
-        
-        if self.oversampling_method is not None and self.oversampling_method != "None":
-            steps.append(
-                (
-                    "oversample",
-                    oversample_utils.create_oversampling_model(
-                        method=self.oversampling_method,
-                        random_state=self.random_state,
-                    )
-                ),
-            )
+        if self.feature_first:
+            if self.feature_selection_method is not None and self.feature_selection_method != "None":
+                steps.append(
+                    ("select", create_feature_selector(method=self.feature_selection_method))
+                )
+            
+            if self.oversampling_method is not None and self.oversampling_method != "None":
+                steps.append(
+                    ("oversample", oversample_utils.create_oversampling_model(
+                            method=self.oversampling_method,
+                            random_state=self.random_state))
+                )
+        else:
+            if self.oversampling_method is not None and self.oversampling_method != "None":
+                steps.append(
+                    ("oversample", oversample_utils.create_oversampling_model(
+                            method=self.oversampling_method,
+                            random_state=self.random_state))
+                )
+            if self.feature_selection_method is not None and self.feature_selection_method != "None":
+                steps.append(
+                    ("select", create_feature_selector(method=self.feature_selection_method))
+                )
 
 
         pipeline = Pipeline(steps)
