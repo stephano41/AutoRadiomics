@@ -262,25 +262,20 @@ class PCASelector(AnovaSelector):
     def __init__(self, n_components=None):
         self.n_components=n_components
         self.model = PCA(n_components).set_output(transform='pandas')
-        self.anova_selected=None
+
         super().__init__(select_top_best=False)
 
     
     def fit(self, X, y=None):
-        indices = self.run_anova(X, y, True)
-        self.anova_selected = X.columns[indices].tolist()
-        _X = X.iloc[:,indices]
-
-        if self.n_components is None:
-            self.model.set_params(**{'n_components': int(math.sqrt(len(X)))})
-        self.model.fit(_X)
-        self._selected_features = list(self.model.get_feature_names_out())
+        _X = self.model.fit_transform(X)
+        indices = self.run_anova(_X, y, True)
+        
+        self._selected_features = _X.columns[indices].tolist()
     
     def transform(self, X, y=None):
-        if self.anova_selected is None:
-            raise ValueError('PCA Selector is not fitted yet, fit first before transform')
-        X = X[self.anova_selected]
-        return self.model.transform(X)
+        _X = self.model.transform(X)
+
+        return _X[self.selected_features]
 
 
 class FeatureSelectorFactory:
