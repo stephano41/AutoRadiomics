@@ -51,7 +51,16 @@ class MLClassifier(ClassifierMixin):
         return f"{self.name}"
 
     @classmethod
-    def from_sklearn(cls, name: str, params: dict = {}):
+    def from_sklearn(cls, name: str, **params):
+        if isinstance(name, Mapping):
+            kwarg_dict = {k:v for k, v in name.items() if k!='_method_'}
+            params.update(kwarg_dict)
+            name = name['_method_']
+        elif isinstance(name, str):
+            pass
+        else:
+            raise TypeError(f"name is not a recognised datatype, got {type(name)}")
+        
         if name == "Random Forest":
             model = RandomForestClassifier(**params)
         elif name == "AdaBoost":
