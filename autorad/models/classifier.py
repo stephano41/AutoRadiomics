@@ -12,6 +12,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
+from collections.abc import Mapping
 
 from autorad.config import config
 from autorad.models import optuna_params
