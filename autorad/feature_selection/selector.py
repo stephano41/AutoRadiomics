@@ -212,7 +212,8 @@ class RFESelector(AnovaSelector):
     def fit(self, X: pd.DataFrame, y: pd.Series):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
-
+        
+        self.model.set_params(n_features_to_select=int(math.sqrt(len(X))))
         self.model.fit(_X,y)
         support = self.model.get_support(indices=True)
         if support is None:
