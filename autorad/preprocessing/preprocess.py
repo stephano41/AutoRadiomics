@@ -131,12 +131,14 @@ class Preprocessor:
         #     result_y["train"] = y.train
 
         # allow for empty test set
-        if not X.test.empty:
-            result_X["test"] = self._transform(X.test)
-            result_y["test"] = y.test
-        else:
-            result_X["test"] = None
-            result_y["test"] = None
+
+        result_X["test"] = None
+        result_y["test"] = None
+        
+        if X.test is not None:
+            if not X.test.empty:
+                result_X["test"] = self._transform(X.test)
+                result_y["test"] = y.test
            
         if X.val is not None:
             result_X["val"] = self._transform(X.val)
@@ -229,10 +231,12 @@ class Preprocessor:
         result_X = {}
         result_X["train"] = self._transform(X.train)
         # allow for empty test set
-        if not X.test.empty:
-            result_X["test"] = self._transform(X.test)
-        else:
-            result_X["test"] = None
+        result_X["test"] = None
+
+        if X.test is not None:
+            if not X.test.empty:
+                result_X["test"] = self._transform(X.test)
+        
         if X.val is not None:
             result_X["val"] = self._transform(X.val)
         if X.train_folds is not None and X.val_folds is not None:
