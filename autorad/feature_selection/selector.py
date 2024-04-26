@@ -193,6 +193,9 @@ class SFSelector(AnovaSelector):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
 
+        if self.n_features_to_select is None:
+            self.model.set_params(n_features_to_select=int(math.sqrt(len(X))))
+
         self.model.fit(_X,y)
         support = self.model.get_support(indices=True)
         if support is None:
@@ -211,7 +214,8 @@ class RFESelector(AnovaSelector):
         indices = self.run_anova(X, y, True)
         _X = X.iloc[:, indices]
         
-        self.model.set_params(n_features_to_select=int(math.sqrt(len(X))))
+        if self.n_features_to_select is not None:
+            self.model.set_params(n_features_to_select=int(math.sqrt(len(X))))
         self.model.fit(_X,y)
         support = self.model.get_support(indices=True)
         if support is None:
