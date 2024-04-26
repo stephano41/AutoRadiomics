@@ -9,7 +9,7 @@ import pandas as pd
 from boruta import BorutaPy
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.feature_selection import SelectKBest, f_classif, SelectFromModel, RFECV, SequentialFeatureSelector
+from sklearn.feature_selection import SelectKBest, f_classif, SelectFromModel, SequentialFeatureSelector, RFE
 from sklearn.linear_model import Lasso, LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import ExtraTreesClassifier
@@ -202,11 +202,9 @@ class SFSelector(AnovaSelector):
 
 
 class RFESelector(AnovaSelector):
-    def __init__(self, min_features=2, scoring='roc_auc', n_jobs=None):
-        self.n_jobs=n_jobs
-        self.min_features=min_features
-        self.scoring=scoring
-        self.model = RFECV(LogisticRegression(), min_features_to_select=min_features, scoring=scoring, n_jobs=n_jobs)
+    def __init__(self, n_features_to_select=None):
+        self.n_features_to_select=n_features_to_select
+        self.model = RFE(LogisticRegression(), n_features_to_select=n_features_to_select)
         super().__init__(select_top_best=False)
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
