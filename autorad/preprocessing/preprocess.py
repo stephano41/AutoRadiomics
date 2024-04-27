@@ -9,11 +9,11 @@ import joblib
 import pandas as pd
 from imblearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-
 from autorad.config import config
 from autorad.data import TrainingData, TrainingInput, TrainingLabels
 from autorad.feature_selection import create_feature_selector
 from autorad.preprocessing import oversample_utils
+from autorad.preprocessing.outlier_clipper import OutlierClipper
 
 log = logging.getLogger(__name__)
 
@@ -272,6 +272,12 @@ class Preprocessor:
     def _build_pipeline(self):
         steps = []
         if self.standardize:
+            steps.append(
+                (
+                    "outlier_clipper",
+                    OutlierClipper()
+                )
+            )
             steps.append(
                 (
                     "standardize",
