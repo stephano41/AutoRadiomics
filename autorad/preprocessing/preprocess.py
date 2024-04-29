@@ -272,12 +272,12 @@ class Preprocessor:
     def _build_pipeline(self):
         steps = []
         if self.standardize:
-            steps.append(
-                (
-                    "outlier_clipper",
-                    OutlierClipper()
-                )
-            )
+            # steps.append(
+            #     (
+            #         "outlier_clipper",
+            #         OutlierClipper()
+            #     )
+            # )
             steps.append(
                 (
                     "standardize",
