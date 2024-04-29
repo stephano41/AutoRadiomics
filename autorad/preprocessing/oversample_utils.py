@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from imblearn.over_sampling import ADASYN, SMOTE, BorderlineSMOTE
+from imblearn.combine import SMOTEENN, SMOTETomek
 from collections.abc import Mapping
 from autorad.config import config
 
@@ -27,6 +28,10 @@ def _checks(method_name, **kwargs):
         return SMOTE(**kwargs)
     elif method_name == "BorderlineSMOTE":
         return BorderlineSMOTE(kind="borderline-1", **kwargs)
+    elif method_name=="SMOTETomek":
+        return SMOTETomek(**kwargs)
+    elif method_name=="SMOTEENN":
+        return SMOTEENN(**kwargs)
     raise ValueError(f"Unknown oversampling method: {method_name}")
 
 class OversamplerWrapper:
