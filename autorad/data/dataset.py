@@ -260,9 +260,9 @@ class FeatureDataset:
                 split_on, test_size, *args, **kwargs
             )
         elif method == "train_with_cross_validation":
-            splits = self.full_split_no_test(split_on, test_size, *args, **kwargs)
+            splits = self.full_split_no_test(split_on, *args, **kwargs)
         elif method == "repeated_stratified_kfold_no_test":
-            splits = self.repeated_stratified_kfold_no_test(split_on, test_size, *args, **kwargs)
+            splits = self.repeated_stratified_kfold_no_test(split_on, *args, **kwargs)
         elif method =='leave_one_out_no_test':
             splits = self.leave_one_out_no_test(split_on, *args, **kwargs)
         else:
@@ -400,7 +400,7 @@ class FeatureDataset:
 
         return self
         
-    def full_split_no_test(self, split_on, test_size, n_splits: int = 5) -> dict:
+    def full_split_no_test(self, split_on, n_splits: int = 5) -> dict:
         patient_df = self.df[[split_on, self.target]].drop_duplicates()
         if not patient_df[split_on].is_unique:
             raise ValueError(
@@ -423,7 +423,7 @@ class FeatureDataset:
 
         return results
 
-    def repeated_stratified_kfold_no_test(self, split_on, test_size, n_splits=5, n_repeats=10):
+    def repeated_stratified_kfold_no_test(self, split_on, n_splits=5, n_repeats=10):
         patient_df = self.df[[split_on, self.target]].drop_duplicates()
         if not patient_df[split_on].is_unique:
             raise ValueError(
@@ -448,7 +448,7 @@ class FeatureDataset:
 
         return results
 
-    def leave_one_out_no_test(self, split_on, test_size):
+    def leave_one_out_no_test(self, split_on):
         patient_df = self.df[[split_on, self.target]].drop_duplicates()
         if not patient_df[split_on].is_unique:
             raise ValueError(
