@@ -11,7 +11,7 @@ from autorad.config import config
 from autorad.config.type_definitions import PathLike
 from autorad.data import ImageDataset
 from autorad.utils import io, mlflow_utils, utils
-
+from collections.abc import Mapping
 log = logging.getLogger(__name__)
 
 # Silence the pyRadiomics logger
@@ -23,7 +23,7 @@ class FeatureExtractor:
         self,
         dataset: ImageDataset,
         feature_set: str = "pyradiomics",
-        extraction_params: PathLike = "CT_Baessler.yaml",
+        extraction_params: PathLike | Mapping = "CT_Baessler.yaml",
         n_jobs: int | None = None,
     ):
         """
@@ -33,17 +33,17 @@ class FeatureExtractor:
             extraction_params: path to the JSON file containing the extraction
                 parameters, or a string containing the name of the file in the
                 default extraction parameter directory
-                (autorad.config.pyradiomics_params)
+                (autorad.config.pyradiomics_params), or a dictionary containing the config
             n_jobs: number of parallel jobs to run
         Returns:
             None
         """
         self.dataset = dataset
         self.feature_set = feature_set
-        self.extraction_params = self._get_extraction_param_path(
-            extraction_params
-        )
-        log.info(f"Using extraction params from {self.extraction_params}")
+        self.extraction_params = extraction_params
+        self.run_id_=None
+        if isinstance(self.extraction_params, PathLike):
+            log.info(f"Using extraction params from {self.extraction_params}")
         logging.getLogger("radiomics.glcm").setLevel(logging.ERROR)
         
         self.n_jobs = utils.set_n_jobs(n_jobs)
@@ -60,9 +60,17 @@ class FeatureExtractor:
                 f"Extraction parameter file {extraction_params} not found."
             )
         return str(result_path)
+    
+    def get_extraction_params(self):
+        if isinstance(self.extraction_params, PathLike):
+            return io.load_yaml(self._get_extraction_param_path(self.extraction_params))
+        elif isinstance(self.extraction_params, Mapping):
+            return self.extraction_params
+        else:
+            raise TypeError(f"extraction_params must be a path to a config file or a dictionary, got {type(self.extraction_params)}")
 
     def run(
-        self, keep_metadata=True, mask_label: int | None = None
+        self, keep_metadata=True, mask_label: int | None = None, run_id=None
     ) -> pd.DataFrame:
         """
         Run feature extraction.
@@ -72,6 +80,7 @@ class FeatureExtractor:
             mask_label: label in the mask to extract features from.
                 For default value of None, the `label` value from extraction
                 param file is used. Set this when you have multiple labels in your mask
+            run_id: an existing mlflow run id to log to, otherwise a new run will be created
         Returns:
             DataFrame containing extracted features
         """
@@ -89,10 +98,10 @@ class FeatureExtractor:
         # move ID column to front
         feature_df = feature_df.set_index(ID_colname).reset_index()
 
-        run_id = self.save_config(mask_label=mask_label)
+        self.run_id_ = self.save_config(mask_label=mask_label, run_id=run_id)
 
         # add ID for this extraction run
-        feature_df.insert(1, "extraction_ID", run_id)
+        feature_df.insert(1, "extraction_ID", self.run_id_)
 
         if keep_metadata:
             # Add all columns from ImageDataset.df
@@ -105,8 +114,8 @@ class FeatureExtractor:
                 raise ValueError("Error concatenating features and metadata.")
         return feature_df
 
-    def save_config(self, mask_label):
-        extraction_param_dict = io.load_yaml(self.extraction_params)
+    def save_config(self, mask_label, run_id=None):
+        extraction_param_dict = self.get_extraction_params()
         if mask_label is not None:
             extraction_param_dict["label"] = mask_label
         run_config = {
@@ -116,7 +125,7 @@ class FeatureExtractor:
 
         mlflow.set_tracking_uri("file://" + config.MODEL_REGISTRY)
         mlflow.set_experiment("feature_extraction")
-        with mlflow.start_run() as run:
+        with mlflow.start_run(run_id=run_id) as run:
             mlflow_utils.log_dict_as_artifact(run_config, "extraction_config")
 
         return run.info.run_id
@@ -124,7 +133,7 @@ class FeatureExtractor:
     def _initialize_extractor(self):
         if self.feature_set == "pyradiomics":
             self.extractor = PyRadiomicsExtractorWrapper(
-                str(self.extraction_params)
+                self.get_extraction_params()
             )
         else:
             raise ValueError("Feature set not supported")
