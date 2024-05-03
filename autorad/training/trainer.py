@@ -81,11 +81,13 @@ class Trainer:
         self,
         auto_preprocess: bool = False,
         experiment_name="model_training",
-        mlflow_start_kwargs={}
+        mlflow_start_kwargs=None
     ):
         """
         Run hyperparameter optimization for all the models.
         """
+        if mlflow_start_kwargs is None:
+            mlflow_start_kwargs = {}
         if not mlflow.get_experiment_by_name(experiment_name):
             mlflow.create_experiment(experiment_name)
         else:
