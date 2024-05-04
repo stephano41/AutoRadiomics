@@ -16,7 +16,6 @@ from autorad.training import OptunaOptimizer, train_utils
 from autorad.utils import io, mlflow_utils
 from autorad.preprocessing import Preprocessor
 from autorad.metrics import roc_auc, pr_auc
-import os
 
 log = logging.getLogger(__name__)
 

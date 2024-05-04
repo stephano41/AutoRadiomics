@@ -18,69 +18,6 @@ from autorad.preprocessing.outlier_clipper import OutlierClipper
 log = logging.getLogger(__name__)
 
 
-def run_auto_preprocessing(
-    data: TrainingData,
-    result_dir: Path,
-    use_oversampling: bool = True,
-    use_feature_selection: bool = True,
-    oversampling_methods: list[str] | None = None,
-    feature_selection_methods: list[str] | None = None,
-    feature_first=True
-):
-    """Run preprocessing with a variety of feature selection and oversampling methods.
-
-    Args:
-    - data: Training data to preprocess.
-    - result_dir: Path to a directory where the preprocessed data will be saved.
-    - use_oversampling: A boolean indicating whether to use oversampling. If `True` and
-      `oversampling_methods` is not provided, all methods in the `config.OVERSAMPLING_METHODS`
-      list will be used.
-    - use_feature_selection: A boolean indicating whether to use feature selection. If `True` and
-      `feature_selection_methods` is not provided, all methods in the `config.FEATURE_SELECTION_METHODS`
-    - oversampling_methods: A list of oversampling methods to use. If not provided, all methods
-      in the `config.OVERSAMPLING_METHODS` list will be used.
-    - feature_selection_methods: A list of feature selection methods to use. If not provided, all
-      methods in the `config.FEATURE_SELECTION_METHODS` list will be used.
-
-    Returns:
-    - None. The preprocessed data will be saved to the `result_dir` directory.
-    """
-    if use_oversampling:
-        if oversampling_methods is None:
-            oversampling_methods = config.OVERSAMPLING_METHODS
-    else:
-        oversampling_methods = [None]
-
-    if use_feature_selection:
-        if feature_selection_methods is None:
-            feature_selection_methods = config.FEATURE_SELECTION_METHODS
-    else:
-        feature_selection_methods = [None]
-
-    preprocessed = {}
-    for selection_method in feature_selection_methods:
-        preprocessed[str(selection_method)] = {}
-        for oversampling_method in oversampling_methods:
-            preprocessor = Preprocessor(
-                standardize=True,
-                feature_selection_method=selection_method,
-                oversampling_method=oversampling_method,
-                feature_first=feature_first
-            )
-            try:
-                preprocessed[str(selection_method)][
-                    str(oversampling_method)
-                ] = preprocessor.fit_transform_data(data)
-            except AssertionError:
-                log.error(
-                    f"Preprocessing failed with {selection_method} and {oversampling_method}."
-                )
-        if not preprocessed[str(selection_method)]:
-            del preprocessed[str(selection_method)]
-    with open(Path(result_dir) / "preprocessed.pkl", "wb") as f:
-        joblib.dump((preprocessed, preprocessor.get_params()), f)
-
-
 class Preprocessor:
     def __init__(
         self,
@@ -102,6 +39,8 @@ class Preprocessor:
             oversampling_method: minority class oversampling method,
                 if None, no oversampling
             random_state: seed
+            feature_first (bool): A flag indicating whether feature selection should be performed before oversampling.
+                Defaults to True.
         """
         self.standardize = standardize
         self.feature_selection_method = feature_selection_method
@@ -315,3 +254,100 @@ class Preprocessor:
     def get_params(self, deep=None):
         return {key: getattr(self, key) for key in inspect.signature(self.__init__).parameters.keys() if
                 key != "self"}
+
+
+def run_auto_preprocessing(
+    data: TrainingData,
+    result_dir: Path,
+    use_oversampling: bool = True,
+    use_feature_selection: bool = True,
+    oversampling_methods: list[str] | None = None,
+    feature_selection_methods: list[str] | None = None,
+    feature_first=True,
+    preprocessor_cls=Preprocessor,
+    **kwargs
+):
+    """Run preprocessing with a variety of feature selection and oversampling methods.
+
+    Args:
+    - data (TrainingData): The training data to preprocess.
+    - result_dir (Path): The directory path where the preprocessed data will be saved.
+    - use_oversampling (bool): A flag indicating whether to use oversampling. If True and
+      oversampling_methods is not provided, all methods in the config.OVERSAMPLING_METHODS
+      list will be used.
+    - use_feature_selection (bool): A flag indicating whether to use feature selection. If True and
+      feature_selection_methods is not provided, all methods in the config.FEATURE_SELECTION_METHODS
+      list will be used.
+    - oversampling_methods (list[str] | None): A list of oversampling methods to use. If not provided,
+      all methods in the config.OVERSAMPLING_METHODS list will be used.
+    - feature_selection_methods (list[str] | None): A list of feature selection methods to use. If not
+      provided, all methods in the config.FEATURE_SELECTION_METHODS list will be used.
+    - feature_first (bool): A flag indicating whether feature selection should be performed before oversampling.
+      Defaults to True.
+    - preprocessor_cls: The class to be used for preprocessing.
+    - **kwargs: Additional keyword arguments to be passed to the preprocessor.
+
+    Returns:
+    - None. The preprocessed data will be saved to the result_dir directory.
+    """
+    if use_oversampling:
+        if oversampling_methods is None:
+            oversampling_methods = config.OVERSAMPLING_METHODS
+    else:
+        oversampling_methods = [None]
+
+    if use_feature_selection:
+        if feature_selection_methods is None:
+            feature_selection_methods = config.FEATURE_SELECTION_METHODS
+    else:
+        feature_selection_methods = [None]
+
+    if feature_first:
+        preprocessed_feature_selection = {}
+        for selection_method in feature_selection_methods:
+            fs_preprocessor = preprocessor_cls(standardize=True, feature_selection_method=selection_method, 
+                                               oversampling_method=None, 
+                                               feature_first=feature_first,
+                                               **kwargs)
+            log.info(f'preprocessing with {selection_method}')
+            preprocessed_feature_selection[str(selection_method)]=fs_preprocessor.fit_transform_data(data)
+            if not preprocessed_feature_selection[str(selection_method)]:
+                del preprocessed_feature_selection[str(selection_method)]
+        preprocessed={}
+        for selection_method, selected_data in preprocessed_feature_selection.items():
+            preprocessed[str(selection_method)]= {}
+            for oversampling_method in oversampling_methods:
+                log.info(f'preprocessing with {selection_method} with {oversampling_method}')
+
+                preprocessor = preprocessor_cls(standardize=False, feature_selection_method=None, 
+                                                oversampling_method=oversampling_method, 
+                                                feature_first=feature_first,
+                                                **kwargs)
+                preprocessed[str(selection_method)][str(oversampling_method)] = preprocessor.fit_transform_data(selected_data)
+    else:
+        preprocessed_over_sampling = {}
+        for oversampling_method in oversampling_methods:
+            log.info(f'preprocessing with {oversampling_method}')
+            oversampling_preprocessor = preprocessor_cls(standardize=True, feature_selection_method=None, 
+                                                         oversampling_method=oversampling_method, feature_first=feature_first,
+                                                         **kwargs)
+            preprocessed_over_sampling[str(oversampling_method)] = oversampling_preprocessor.fit_transform_data(data)
+        preprocessed={}
+        for selection_method in feature_selection_methods:
+            preprocessed[str(selection_method)] = {}
+            for oversampling_method, oversampled_data in preprocessed_over_sampling.items():
+                log.info(f'preprocessing with {selection_method} with {oversampling_method}')
+                preprocessor = preprocessor_cls(standardize=False, feature_selection_method=selection_method, 
+                                                oversampling_method=None, 
+                                                feature_first=feature_first,
+                                                **kwargs)
+                preprocessed[str(selection_method)][str(oversampling_method)] = preprocessor.fit_transform_data(oversampled_data)
+            if not preprocessed[str(selection_method)]:
+                del preprocessed[str(selection_method)]
+
+    final_preprocessor = preprocessor_cls(standardize=True, feature_selection_method=selection_method, 
+                                          oversampling_method=oversampling_method, 
+                                          feature_first=feature_first,
+                                          **kwargs)
+    with open(Path(result_dir) / "preprocessed.pkl", "wb") as f:
+        joblib.dump((preprocessed, final_preprocessor.get_params()), f)
