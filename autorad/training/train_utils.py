@@ -7,7 +7,7 @@ import pandas as pd
 import shap
 from optuna.study import Study
 import optuna
-
+import pickle
 from autorad.data import FeatureDataset
 from autorad.models import MLClassifier
 from autorad.utils import io, mlflow_utils
@@ -60,3 +60,11 @@ def log_optuna(study: Study):
 
     parallel_coordinate_plot = optuna.visualization.plot_parallel_coordinate(study, params=['oversampling_method', 'feature_selection_method','model'])
     mlflow.log_figure(parallel_coordinate_plot,'hyperparameter_study/parallel_coordinate.html')
+
+
+def log_preprocessed_data(data):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        save_dir = Path(tmp_dir) /  'preprocessed_data.pkl'
+        with open(save_dir, 'wb') as f:
+            pickle.dump(data, f)
+        mlflow.log_artifact(str(save_dir), 'feature_dataset')

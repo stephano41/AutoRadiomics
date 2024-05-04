@@ -57,7 +57,6 @@ def params_RandomForest(trial: Trial) -> dict:
         ),
         "min_samples_leaf": trial.suggest_int("rf_min_samples_leaf", 1, 10),
         "min_samples_split": trial.suggest_int("rf_min_samples_split", 2, 10),
-        "bootstrap": trial.suggest_categorical("rf_bootstrap", [True, False]),
     }
     return params
 

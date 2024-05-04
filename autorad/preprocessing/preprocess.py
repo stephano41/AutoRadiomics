@@ -78,7 +78,7 @@ def run_auto_preprocessing(
         if not preprocessed[str(selection_method)]:
             del preprocessed[str(selection_method)]
     with open(Path(result_dir) / "preprocessed.pkl", "wb") as f:
-        joblib.dump(preprocessed, f)
+        joblib.dump((preprocessed, preprocessor.get_params()), f)
 
 
 class Preprocessor:
