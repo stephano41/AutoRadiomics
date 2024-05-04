@@ -1,1 +1,1 @@
-from ._metric import  roc_auc, pr_auc
+from ._metrics import  roc_auc, pr_auc

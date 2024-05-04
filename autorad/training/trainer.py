@@ -203,9 +203,7 @@ class Trainer:
         Get preprocessed dataset with preprocessing method that performed
         best in the training.
         """
-        pkl_path = self.result_dir / "preprocessed.pkl"
-        with open(pkl_path, "rb") as f:
-            preprocessed = joblib.load(f)
+        preprocessed, _ = self.get_preprocessed_pickle()
         feature_selection_method = trial.suggest_categorical(
             "feature_selection_method", preprocessed.keys()
         )
