@@ -19,7 +19,7 @@ from collections.abc import Mapping
 from ast import literal_eval
 from mrmr import mrmr_classif
 from sklearn.decomposition import PCA
-
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from autorad.config import config
 
@@ -27,7 +27,7 @@ warnings.filterwarnings(action="ignore", category=ConvergenceWarning)
 log = logging.getLogger(__name__)
 
 
-class CoreSelector(abc.ABC):
+class CoreSelector(BaseEstimator, TransformerMixin, abc.ABC):
     """Template for feature selection methods"""
 
     def __init__(self):
